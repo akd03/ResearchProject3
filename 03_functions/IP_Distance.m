@@ -15,35 +15,33 @@ arguments (Output)
 end
 
 %% FUNCTION BODY
-num_existing = size(xN, 1);
-
-% 1. Map existing xN coordinates to their row indices in Ax
-% Preallocate the array for existing points + K new points
-selected_idx = zeros(num_existing + K, 1);
-for i = 1:num_existing
+% Setup 
+N = size(xN, 1);
+idx_N = zeros(N + K, 1);
+for i = 1:N
     [~, idx] = min(sum((Ax - xN(i, :)).^2, 2));
-    selected_idx(i) = idx;
+    idx_N(i) = idx;
 end
 
 % 2. Initialize the running minimum distance array
 % Extract columns for all currently selected points and find the minimum row-wise
-min_dist = min(Norm_Ax(:, selected_idx(1:num_existing)), [], 2);
+MinDist_Ax = min(Norm_Ax(:, idx_N(1:N)), [], 2);
 
 % 3. Iterative Selection Loop
 for i = 1:K
     % Find the point that maximizes the minimum distance
-    [~, next_idx] = max(min_dist);
+    [~, next_idx] = max(MinDist_Ax);
     
     % Store the new index
-    current_step = num_existing + i;
-    selected_idx(current_step) = next_idx;
+    current_step = N + i;
+    idx_N(current_step) = next_idx;
     
     % Update the running minimum distance directly from the Norm_Ax matrix
-    min_dist = min(min_dist, Norm_Ax(:, next_idx));
+    MinDist_Ax = min(MinDist_Ax, Norm_Ax(:, next_idx));
 end
 
 % 4. Extract final coordinates
-xN_IP = Ax(selected_idx, :);
+xN_IP = Ax(idx_N, :);
 
 
 end
