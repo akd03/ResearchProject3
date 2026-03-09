@@ -1,8 +1,6 @@
 *.asv
 *.mex*
 *.slxc
-resources/
 .SimulinkProject/
 _SimulinkProject
-node_modules/
 .DS_Store
