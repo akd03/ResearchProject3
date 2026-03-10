@@ -26,14 +26,15 @@ Nx_idx = [1, 129];
 
 %% DEFORMATION
 % True Deformation
-DAx = Rotate(Ax, 10, 0);
+DAx_1 = Rotate(Ax, 120, 0.5);
+DAx = Translate(DAx_1, [0, 0]);
 RAx = DAx - Ax;
 
 %% INITIAL POINT SELECTION
 Nx_idx = IP_Distance(Nx_idx, Ax, 15);
 
 %% GREEDY ALGORITHM
-SF_R = 5;
+SF_R = 10;
 [Nx_idx, max_err_history] = Greedy(Nx_idx, Ax, RAx, SF_R, "K", 20);
 Nx = Ax(Nx_idx, :); 
 RNx = RAx(Nx_idx, :);
@@ -61,7 +62,7 @@ DMx = [Mx(:,1)+RMx_x, Mx(:,2)+RMx_y];
 figure; 
 tiledlayout(1, 2, "TileSpacing", "tight"); 
 nexttile; hold on; axis equal;
-plot(Mx(:,1), Mx(:,2), "b.");
+%plot(Mx(:,1), Mx(:,2), "b.");
 plot(Ax(:,1), Ax(:,2), "r.-");
 plot(Ax(Nx_idx(1:2), 1), Ax(Nx_idx(1:2),2), "go", "MarkerFaceColor", "g", "MarkerSize", 8);
 plot(Ax(Nx_idx(3:end), 1), Ax(Nx_idx(3:end),2), "bo", "MarkerFaceColor", "b", "MarkerSize", 8);
@@ -69,7 +70,8 @@ nexttile; hold on; axis equal;
 xline(0, "k");
 yline(0, "k");
 plot(DAx(:,1), DAx(:,2), "b.-"); 
-plot(DMx(:,1), DMx(:,2), "r.");
+%plot(DMx(:,1), DMx(:,2), "r.");
 plot(DAx(Nx_idx,1), DAx(Nx_idx,2), "ro", "MarkerFaceColor", "r", "MarkerSize", 8);
 
 PlotDeformationField(Mx, DMx, 100);
+PlotOMesh(Mx, DMx, Ni, Nj);
