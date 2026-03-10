@@ -9,7 +9,7 @@
 
 
 %% LOAD MESH
-% Load Mesh
+% Load NACA Mesh
 MeshFile = fopen("05_meshes\NACA0012257x129.xyz", "r");
 Header = fscanf(MeshFile, '%d', 2);
 Ni = Header(1);
@@ -20,7 +20,7 @@ fclose(MeshFile);
 Mx = [reshape(MeshData{1}, [Ni*Nj, 1]), reshape(MeshData{3}, [Ni*Nj, 1])];
 Ax = [Mx(1:Ni,1), Mx(1:Ni,2)];
 % Initial Control Points - LE and TE
-Nx_idx = [0, 129];
+Nx_idx = [1, 129];
 
 
 
@@ -32,11 +32,12 @@ Nx_idx = [0, 129];
 
 
 %% INITIAL POINT SELECTION
-% Add TE and LE Points
+Nx_idx = IP_Distance(Nx_idx, Ax, 15);
 
-
-
-
+figure; hold on; axis equal;
+plot(Ax(:,1), Ax(:,2), "r.-");
+plot(Ax(Nx_idx(1:2), 1), Ax(Nx_idx(1:2),2), "go", "MarkerFaceColor", "g", "MarkerSize", 8);
+plot(Ax(Nx_idx(3:end), 1), Ax(Nx_idx(3:end),2), "bo", "MarkerFaceColor", "b", "MarkerSize", 8);
 
 
 %% GREEDY ALGORITHM

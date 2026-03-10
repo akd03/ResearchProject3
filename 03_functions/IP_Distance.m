@@ -1,47 +1,30 @@
-function [xN_IP] = IP_Distance(xN, Ax, Norm_Ax, K);
-%IP_DISTANCE Select K initial points based on euclidean distance.
-%   Inputs: xN, Ax, Norm_Ax, Ax, K
-%   xN may contain just LE and TE to begin with. 
-%   K must be smaller than Ax
+function [Nx_idx_out] = IP_Distance(Nx_idx_in, Ax, K)
+%IP_DISTANCE Select K initial points based on Euclidean distance.
+%   Inputs: Nx_idx_in, Ax, K
+%   Uses Farthest Point Sampling (FPS) to append K new indices 
+%   to the existing Nx_idx_in array.
+
 arguments (Input)
-    xN                   % Current List of Initial Points
+    Nx_idx_in            % Current List of Initial Point Indices (e.g., LE and TE)
     Ax                   % Complete List of Aerofoil Points
-    Norm_Ax              % Norms Between All Aerofoil Points
     K                    % Number of Initial Points to Select
 end
-
 arguments (Output)
-    xN_IP                % New List of Initial Points
+    Nx_idx_out           % New List of Initial Point Indices
 end
 
 %% FUNCTION BODY
-% Setup 
-N = size(xN, 1);
-idx_N = zeros(N + K, 1);
-for i = 1:N
-    [~, idx] = min(sum((Ax - xN(i, :)).^2, 2));
-    idx_N(i) = idx;
-end
-
-% 2. Initialize the running minimum distance array
-% Extract columns for all currently selected points and find the minimum row-wise
-MinDist_Ax = min(Norm_Ax(:, idx_N(1:N)), [], 2);
-
-% 3. Iterative Selection Loop
+% Preallocate output matrix
+N = length(Nx_idx_in);
+Nx_idx_out = zeros(N + K, 1);       
+Nx_idx_out(1:N) = Nx_idx_in;
+% Calc distance from surf mesh points to intial control points in list
+Ax_MinDist = min(Norm(Ax, Ax(Nx_idx_in, :)), [], 2);
+% Iterative selection loop
 for i = 1:K
-    % Find the point that maximizes the minimum distance
-    [~, next_idx] = max(MinDist_Ax);
-    
-    % Store the new index
-    current_step = N + i;
-    idx_N(current_step) = next_idx;
-    
-    % Update the running minimum distance directly from the Norm_Ax matrix
-    MinDist_Ax = min(MinDist_Ax, Norm_Ax(:, next_idx));
+    [~, next_idx] = max(Ax_MinDist);                           % Find idx that maximizes the min dist
+    Nx_idx_out(N + i) = next_idx;                              % Add to Nx list
+    Ax_MinDist = min(Ax_MinDist, Norm(Ax, Ax(next_idx, :)));   % update running min distances
 end
-
-% 4. Extract final coordinates
-xN_IP = Ax(idx_N, :);
-
 
 end

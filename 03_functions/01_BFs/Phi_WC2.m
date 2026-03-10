@@ -1,10 +1,10 @@
 function [Phi] = Phi_WC2(r)
 %PHI_WC2 Evaluates the Wendland C2 radial basis function on Matrix
 arguments (Input)
-    r double % Normalized distance array (scalar, vector, or matrix)
+    r double  % N x M Normed array  
 end
 arguments (Output)
-    Phi      % Evaluated basis function values of the same size
+    Phi       % N x M Array
 end
 
 %% FUNCTION BODY
