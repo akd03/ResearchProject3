@@ -26,7 +26,6 @@ tiledlayout(1, 2, "TileSpacing", "tight");
 % Left Tile: Initial Mesh
 nexttile;
 hold on;
-axis equal;
 title('Initial O-Mesh');
 xlabel('X');
 ylabel('Y');
@@ -40,7 +39,6 @@ hold off;
 % Right Tile: Deformed Mesh
 nexttile;
 hold on;
-axis equal;
 title('Deformed O-Mesh');
 xlabel('X');
 ylabel('Y');
