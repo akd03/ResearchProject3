@@ -52,11 +52,11 @@ G_y = CNx \ RNx(:, 2);
 CMx = Phi_WC2(Norm(Mx, Nx) / SF_R);
 
 % 5. Interpolate the deformation for the entire mesh (Nm x 1)
-RMx_x = CMx * G_x;                  
-RMx_y = CMx * G_y;           
+SMx_x = CMx * G_x;                  
+SMx_y = CMx * G_y;           
 
 % Final Deformation Array
-DMx = [Mx(:,1)+RMx_x, Mx(:,2)+RMx_y];
+DMx = [Mx(:,1)+SMx_x, Mx(:,2)+SMx_y];
 
 %% RESULTS/PLOTTING
 figure; 
