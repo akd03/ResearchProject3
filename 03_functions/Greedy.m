@@ -1,15 +1,14 @@
-function [Nx_idx_out, max_err_history] = Greedy(Nx_idx, Ax, DAx, SF_R, options)
-%GREEDY Adds control points based on maximum deformation error.
-%   Inputs: Nx_idx, Ax, DAx, SF_R, options (err_tol, K)
+function [Nx_idx_out, max_err_history] = Greedy(Nx_idx_in, Ax, RAx, SF_R, options)
+%GREEDY_SELECTION Adds control points based on maximum deformation error.
 
 arguments (Input)
-    Nx_idx               % Initial Point Indices
+    Nx_idx_in            % Initial Point Indices
     Ax                   % Complete List of Aerofoil Points
-    DAx                  % True Deformation at all nodes
+    RAx                  % Applied Deformation (Displacement vectors) at all nodes
     SF_R                 % Support Radius
     
-    options.err_tol (1,1) double = 0     % Defaults to 0 so it never triggers if uncalled
-    options.K       (1,1) double = Inf   % Defaults to Inf (max iterations) if uncalled
+    options.err_tol (1,1) double = 0     
+    options.K       (1,1) double = Inf   
 end
 arguments (Output)
     Nx_idx_out           % Final list of Control Point Indices
@@ -17,60 +16,51 @@ arguments (Output)
 end
 
 %% FUNCTION BODY
-% Initialise Counter/Output
-Nx_idx_out = Nx_idx;
+Nx_idx_out = Nx_idx_in;
 max_err_history = [];
 iterations = 0;
 
-% Reshape Ax for 3D broadcasting in the Norm function
-Ne = size(Ax, 1);
-Ax_3D = reshape(Ax, [Ne, 1, 2]);
-
 % Initialize the evaluation matrix for the starting points
-Nc_initial = length(Nx_idx);
-Nx_coords_3D = reshape(Ax(Nx_idx, :), [1, Nc_initial, 2]);
-Dist_initial = Norm(Ax_3D, Nx_coords_3D);
-CEx = Phi_WC2(Dist_initial / SF_R);      % Ne x Nc_initial
+% Directly pass the 2D coordinate arrays
+Dist_initial = Norm(Ax, Ax(Nx_idx_in, :));
+CEx = Phi_WC2(Dist_initial / SF_R);
+max_err = Inf; 
 
 % Greedy Loop
-while true
-    % Def and Training Matrix
-    DxN = DAx(Nx_idx_out, :);              % Nc x 2                         
-    CNx = CEx(Nx_idx_out, :);              % Nc x Nc
+while (max_err > options.err_tol) && (iterations < options.K)
     
-    % Weights of Known xN
-    Gamma_x = CNx \ DxN(:, 1);             % Nc x 1
-    Gamma_y = CNx \ DxN(:, 2);             % Nc x 1 
+    % Extract the known displacement values for the control points
+    RNx = RAx(Nx_idx_out, :);                                       
+    CNx = CEx(Nx_idx_out, :);              
     
-    % Interpolated Def
-    Sx_x = CEx * Gamma_x;                  % Ne x 1
+    % Solve for the weights
+    Gamma_x = CNx \ RNx(:, 1);             
+    Gamma_y = CNx \ RNx(:, 2);             
+    
+    % Interpolate the displacement field across the aerofoil
+    Sx_x = CEx * Gamma_x;                  
     Sx_y = CEx * Gamma_y;                  
     
-    % Positional Error
-    Err_x = DAx(:, 1) - Sx_x;              % Ne x 1
-    Err_y = DAx(:, 2) - Sx_y;              
+    % Calculate the error between the true displacement and the interpolated displacement
+    Err_x = RAx(:, 1) - Sx_x;              
+    Err_y = RAx(:, 2) - Sx_y;              
     Err_mag = sqrt(Err_x.^2 + Err_y.^2);
     
-    % Find Max Error and Location
+    % Find maximum error and its index
     [max_err, next_idx] = max(Err_mag);
     max_err_history(end+1, 1) = max_err;
     
-    % End Loop At Stopping Criteria
-    if max_err <= options.err_tol || iterations >= options.K
-        break;
+    if (max_err > options.err_tol) && (iterations < options.K)
+        Nx_idx_out(end+1, 1) = next_idx;
+        
+        % Incrementally calculate the single new influence column
+        new_dist = Norm(Ax, Ax(next_idx, :));
+        new_CEx_col = Phi_WC2(new_dist / SF_R);
+        
+        % Append the new column to the existing evaluation matrix
+        CEx = [CEx, new_CEx_col];
+        
+        iterations = iterations + 1;
     end
-    
-    % Add Point w/ Max Error To Nx
-    Nx_idx_out(end+1, 1) = next_idx;
-    
-    % Incrementally calculate the new influence column
-    next_coord_3D = reshape(Ax(next_idx, :), [1, 1, 2]);
-    new_dist = Norm(Ax_3D, next_coord_3D);
-    new_CEx_col = Phi_WC2(new_dist / SF_R);
-    
-    % Append the new column to the existing evaluation matrix
-    CEx = [CEx, new_CEx_col];
-    
-    iterations = iterations + 1;
 end
 end
