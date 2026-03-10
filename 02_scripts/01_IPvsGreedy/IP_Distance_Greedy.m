@@ -26,7 +26,7 @@ Nx_idx = [1, 129];
 
 %% DEFORMATION
 % True Deformation
-
+DAx = Rotate(Ax, 10, 1);
 
 
 
@@ -34,11 +34,16 @@ Nx_idx = [1, 129];
 %% INITIAL POINT SELECTION
 Nx_idx = IP_Distance(Nx_idx, Ax, 15);
 
-figure; hold on; axis equal;
+figure; 
+tiledlayout(1, 2, "TileSpacing", "tight"); 
+nexttile; hold on; axis equal;
 plot(Ax(:,1), Ax(:,2), "r.-");
 plot(Ax(Nx_idx(1:2), 1), Ax(Nx_idx(1:2),2), "go", "MarkerFaceColor", "g", "MarkerSize", 8);
 plot(Ax(Nx_idx(3:end), 1), Ax(Nx_idx(3:end),2), "bo", "MarkerFaceColor", "b", "MarkerSize", 8);
-
+nexttile; hold on; axis equal;
+xline(0, "k");
+yline(0, "k");
+plot(DAx(:,1), DAx(:,2), "b.-"); 
 
 %% GREEDY ALGORITHM
 
