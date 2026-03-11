@@ -32,7 +32,7 @@ DAx = Translate(DAx, [0, 1]);
 RAx = DAx - Ax;
 
 %% PARAMETER SWEEP & GREEDY ALGORITHM
-SF_R = 10;
+SF_R = 1.5;
 N_vals = [10, 20, 30, 40, 50, 60];
 pct_vals = [0, 0.20, 0.40, 0.60, 0.80];
 
@@ -47,16 +47,13 @@ for N = N_vals
         pct = pct_vals(i);
         N_IP = round(N * pct);
         N_G = N - N_IP;
-        
-        % Reset the starting points for this specific iteration
+        % Reset the starting points
         Nx_idx = Nx_idx_base;
-        
-        % 1. Initial Point Selection
+        % Initial Points
         if N_IP > 0
             Nx_idx = IP_Distance(Nx_idx, Ax, N_IP);
         end
-        
-        % 2. Greedy Algorithm
+        % Greedy Algorithm
         if N_G > 0
             [Nx_idx_final, max_err_history] = Greedy(Nx_idx, Ax, RAx, SF_R, "K", N_G);
             
