@@ -7,7 +7,7 @@
 %  Mx       Volume Mesh Points
 
 %% LOAD MESH
-%
+
 % Load NACA Mesh
 MeshFile = fopen("05_meshes\NACA0012257x129.xyz", "r");
 Header = fscanf(MeshFile, '%d', 2);
@@ -15,34 +15,47 @@ Ni = Header(1);
 Nj = Header(2);
 MeshData = textscan(MeshFile, '%f %f %f');
 fclose(MeshFile);
+
 % Set Aerofoil and Evaluation Points (Rest of Mesh)
 Mx = [reshape(MeshData{1}, [Ni*Nj, 1]), reshape(MeshData{3}, [Ni*Nj, 1])];
 Ax = [Mx(1:Ni,1), Mx(1:Ni,2)];
+
 % Initial Control Points - LE and TE
 Nx_idx_base = [1; 129];
-%}
-
-
  
-
 %% DEFORMATION
 % True Deformation
-DAx = Rotate(Ax, 30, 0);
+DAx = Rotate(Ax, 30, 0.5);
 DAx = Translate(DAx, [0, 1]);
 RAx = DAx - Ax;
 
 %% PARAMETER SWEEP & GREEDY ALGORITHM
 SF_R = 3;
-%N_vals = [10, 20, 30, 40, 50, 60, 100];
-%pct_vals = [0, 0.20, 0.40, 0.60, 0.80];
-
-N_vals = [60];
-pct_vals = [0.5];
+%N_vals = [30, 40, 50, 60, 100];
+N_vals = [100];
+pct_vals = [0, 0.1, 0.20, 0.3, 0.40, 0.5, 0.60, 0.7, 0.80];
+%N_vals = [60];
+%pct_vals = [0.5];
 
 for N = N_vals
     figure;
-    hold on; grid on;
-    set(gca, 'YScale', 'log'); % Log scale for better error visualization
+    tiledlayout(1, 2, "TileSpacing", "compact");
+    
+    % Setup Max Error Axis (Left Tile)
+    ax1 = nexttile;
+    hold(ax1, 'on'); grid(ax1, 'on');
+    set(ax1, 'YScale', 'log'); 
+    xlabel(ax1, 'Total Control Points Added (N_{IP} + N_G)');
+    ylabel(ax1, 'Maximum Deformation Error');
+    title(ax1, sprintf('Max Error Convergence (N = %d)', N));
+
+    % Setup RMSE Axis (Right Tile)
+    ax2 = nexttile;
+    hold(ax2, 'on'); grid(ax2, 'on');
+    set(ax2, 'YScale', 'log'); 
+    xlabel(ax2, 'Total Control Points Added (N_{IP} + N_G)');
+    ylabel(ax2, 'Root Mean Square Error (RMSE)');
+    title(ax2, sprintf('RMSE Convergence (N = %d)', N));
     
     legend_labels = strings(length(pct_vals), 1);
     
@@ -50,38 +63,44 @@ for N = N_vals
         pct = pct_vals(i);
         N_IP = round(N * pct);
         N_G = N - N_IP;
+        
         % Reset the starting points
         Nx_idx = Nx_idx_base;
+        
         % Initial Points
         if N_IP > 0
             Nx_idx = IP_Distance(Nx_idx, Ax, N_IP);
         end
+        
         % Greedy Algorithm
         if N_G > 0
-            [Nx_idx_final, max_err_history] = Greedy(Nx_idx, Ax, RAx, SF_R, "K", N_G);
+            % Capture all three outputs from the updated Greedy function
+            [Nx_idx_final, max_err_history, rmse_history] = Greedy(Nx_idx, Ax, RAx, SF_R, "K", N_G);
             
-            % 3. Plotting the Error History
             % Shift the x-axis so the line starts exactly at N_IP
-            % The -1 ensures the first plotted point corresponds to the initial error
             iterations = N_IP + (1:length(max_err_history)) - 1; 
-            plot(iterations, max_err_history, '.-', 'LineWidth', 1.5, 'MarkerSize', 12);
+            
+            % Plot to the respective axes
+            plot(ax1, iterations, max_err_history, '.-', 'LineWidth', 1.5, 'MarkerSize', 12);
+            plot(ax2, iterations, rmse_history, '.-', 'LineWidth', 1.5, 'MarkerSize', 12);
         end
         
         % Format legend text
         legend_labels(i) = sprintf('N_{IP} = %d (%d%%)', N_IP, round(pct*100));
     end
     
-    % Finalize Figure Formatting
-    xlabel('Total Control Points Added (N_{IP} + N_G)');
-    ylabel('Maximum Deformation Error');
-    title(sprintf('Greedy Convergence for N = %d', N));
-    legend(legend_labels, 'Location', 'best');
-    hold off;
+    % Apply legends to both tiles
+    legend(ax1, legend_labels, 'Location', 'best');
+    legend(ax2, legend_labels, 'Location', 'best');
+    
+    hold(ax1, 'off');
+    hold(ax2, 'off');
 end
 
 
 
 %% ANIMATION OF POINT ADDITION
+%
 figure;
 hold on; 
 axis equal;
@@ -128,3 +147,4 @@ for k = 1:num_total
     drawnow;
 end
 hold off;
+%}

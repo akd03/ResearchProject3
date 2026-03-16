@@ -1,4 +1,4 @@
-function [Nx_idx_out, max_err_history] = Greedy(Nx_idx_in, Ax, RAx, SF_R, options)
+function [Nx_idx_out, max_err_history, rmse_history] = Greedy(Nx_idx_in, Ax, RAx, SF_R, options)
 %GREEDY_SELECTION Adds control points based on maximum deformation error.
 
 arguments (Input)
@@ -13,11 +13,13 @@ end
 arguments (Output)
     Nx_idx_out           % Final list of Control Point Indices
     max_err_history      % Array tracking the maximum error at each step
+    rmse_history         % Array tracking the root mean square error at each step
 end
 
 %% FUNCTION BODY
 Nx_idx_out = Nx_idx_in;
 max_err_history = [];
+rmse_history = [];
 iterations = 0;
 
 % Initialize the evaluation matrix for the starting points
@@ -46,9 +48,12 @@ while (max_err > options.err_tol) && (iterations < options.K)
     Err_y = RAx(:, 2) - Sx_y;              
     Err_mag = sqrt(Err_x.^2 + Err_y.^2);
     
-    % Find maximum error and its index
+    % Find maximum error, calculate RMSE, and store histories
     [max_err, next_idx] = max(Err_mag);
+    rmse_val = sqrt(mean(Err_x.^2 + Err_y.^2));
+    
     max_err_history(end+1, 1) = max_err;
+    rmse_history(end+1, 1) = rmse_val;
     
     if (max_err > options.err_tol) && (iterations < options.K)
         Nx_idx_out(end+1, 1) = next_idx;
