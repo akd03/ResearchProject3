@@ -32,8 +32,8 @@ DAx = Translate(DAx, [0, 1]);
 RAx = DAx - Ax;
 
 %% PARAMETER SWEEP & GREEDY ALGORITHM
-SF_R = 1.5;
-N_vals = [10, 20, 30, 40, 50, 60];
+SF_R = 3;
+N_vals = [10, 20, 30, 40, 50, 60, 100];
 pct_vals = [0, 0.20, 0.40, 0.60, 0.80];
 
 for N = N_vals
