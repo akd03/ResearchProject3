@@ -1,13 +1,18 @@
 NACA = @(x) 5 * 0.12 * (0.2969 * x.^0.5 ...
-                      - 0.1260 * x ...
-                      - 0.3516 * x.^2 ...
-                      + 0.2843 * x.^3 ...
-                      - 0.1036 * x.^4);
+                        - 0.1260 * x ...
+                        - 0.3516 * x.^2 ...
+                        + 0.2843 * x.^3 ...
+                        - 0.1036 * x.^4);
 dNACAdx = @(x) 5 * 0.12 * (0.5 * 0.2969 * x.^-0.5 ...
                            - 0.1260 ...
                            - 2 * 0.3516 * x ...
                            + 3 * 0.2843 * x.^2 ...
                            - 4 * 0.1036 * x.^3);
+
+d2NACAdx2 = @(x) 5 * 0.12 * (-0.25 * 0.2969 * x.^-1.5 ...
+                             + 2 * -0.3516 ...
+                             + 6 * 0.2843 * x ...
+                             + 12 * -0.1036 * x.^2);
 
 
 %% LOAD TRUE NACA MESH
@@ -28,6 +33,7 @@ Nx_idx = [1, 129];
 x = (0:0.001:1)'; 
 N12 = NACA(x);
 dN12 = dNACAdx(x);
+d2N12 = d2NACAdx2(x);
 
 % 1. Lower Surface (Trailing Edge to Leading Edge)
 % Reverse the arrays so x goes from 1 down to 0, and make y negative
@@ -42,6 +48,21 @@ y_upper = N12;
 % 3. Combine into a continuous clockwise list
 % We start at x_upper(2) to prevent duplicating the exact Leading Edge point (0,0)
 Ax_exact = [x_lower, y_lower; x_upper(2:end), y_upper(2:end)];
+
+
+
+%% Curvature of NACA12
+Cont_curv = abs(d2N12 + 1e-6) ./ ((1 + (dN12 + 1e-6).^2).^1.5);
+figure;
+plot (1:1001, 1/Cont_curv);
+
+
+figure; hold on;
+plot(1:1001, dN12, "r-", "DisplayName", "1st Deriv");
+plot(1:1001, d2N12, "b-", "DisplayName", "2nd Deriv")
+
+
+
 
 % PLOT
 figure; 

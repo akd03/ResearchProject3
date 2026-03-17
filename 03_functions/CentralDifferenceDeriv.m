@@ -14,25 +14,22 @@ end
 
 %% FUNCTION BODY
 
-% 1. Create shifted coordinate arrays for the closed loop
+% Shift Forwards and Back
 Ax_f = [Ax(2:end, :); Ax(1, :)];     
 Ax_b = [Ax(end, :); Ax(1:end-1, :)]; 
 
-% 2. Calculate forward (hf) and backward (hb) arc length step sizes
+% Forward and Backward Arclength Step Sizes, denominator
 hf = sqrt((Ax_f(:, 1) - Ax(:, 1)).^2 + (Ax_f(:, 2) - Ax(:, 2)).^2);
 hb = sqrt((Ax(:, 1) - Ax_b(:, 1)).^2 + (Ax(:, 2) - Ax_b(:, 2)).^2);
-
-% 3. Calculate the shared denominator arrays
-den1 = hf .* hb .* (hf + hb);
-den2 = 0.5 .* den1; % The factor of 2 in the 2nd derivative numerator is moved here
+den = hf .* hb .* (hf + hb);
 
 % 4. First Derivative (grad1)
-dx = (hb.^2 .* Ax_f(:, 1) - hf.^2 .* Ax_b(:, 1) + (hf.^2 - hb.^2) .* Ax(:, 1)) ./ den1;
-dy = (hb.^2 .* Ax_f(:, 2) - hf.^2 .* Ax_b(:, 2) + (hf.^2 - hb.^2) .* Ax(:, 2)) ./ den1;
+dx = (hb.^2 .* Ax_f(:, 1) - hf.^2 .* Ax_b(:, 1) + (hf.^2 - hb.^2) .* Ax(:, 1)) ./ den;
+dy = (hb.^2 .* Ax_f(:, 2) - hf.^2 .* Ax_b(:, 2) + (hf.^2 - hb.^2) .* Ax(:, 2)) ./ den;
 
 % 5. Second Derivative (grad2)
-d2x = (hb .* Ax_f(:, 1) + hf .* Ax_b(:, 1) - (hf + hb) .* Ax(:, 1)) ./ den2;
-d2y = (hb .* Ax_f(:, 2) + hf .* Ax_b(:, 2) - (hf + hb) .* Ax(:, 2)) ./ den2;
+d2x = (hb .* Ax_f(:, 1) + hf .* Ax_b(:, 1) - (hf + hb) .* Ax(:, 1)) ./ (0.5 * den);
+d2y = (hb .* Ax_f(:, 2) + hf .* Ax_b(:, 2) - (hf + hb) .* Ax(:, 2)) ./ (0.5 * den);
 
 % 6. Format the outputs to match the [x, y] structure of Ax
 grad1 = [dx, dy];
