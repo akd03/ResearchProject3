@@ -100,51 +100,5 @@ end
 
 
 %% ANIMATION OF POINT ADDITION
-%
-figure;
-hold on; 
-axis equal;
-title('Control Point Selection Sequence');
-xlabel('X'); 
-ylabel('Y');
-
-% Plot the base aerofoil mesh in light gray for context
-plot(Ax(:,1), Ax(:,2), '.-', 'Color', [0.7 0.7 0.7]); 
-
-% Configurable delay between points in seconds
-anim_delay = 0.2; 
-
-num_base = length(Nx_idx_base);
-num_total = length(Nx_idx_final);
-
-% Iterate through the chronological list of indices
-for k = 1:num_total
-    
-    % Get the geometric coordinates for the current chronological point
-    idx = Nx_idx_final(k);
-    pt_x = Ax(idx, 1);
-    pt_y = Ax(idx, 2);
-    
-    % Determine color based on when it was added to the list
-    if k <= num_base
-        pt_color = 'g'; % First 2 points: Base (LE, TE)
-    elseif k <= num_base + N_IP
-        pt_color = 'r'; % Next N_IP points: Initial Selection
-    else
-        pt_color = 'b'; % Remaining points: Greedy Selection
-    end
-    
-    % Plot the new point as a black 'x'
-    h_new = plot(pt_x, pt_y, 'kx', 'MarkerSize', 10, 'LineWidth', 2);
-    drawnow;
-    
-    % Pause for visibility
-    pause(anim_delay);
-    
-    % Replace the 'x' with the permanent colored 'o'
-    delete(h_new);
-    plot(pt_x, pt_y, 'o', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', pt_color, 'MarkerSize', 8);
-    drawnow;
-end
-hold off;
-%}
+%num_base = length(Nx_idx_base);
+%PlotPointSeq(Ax, Nx_idx_final, num_base, N_IP, 0.1);
