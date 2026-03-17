@@ -36,58 +36,80 @@ y_double_prime = d2NACAdx2(x_top);
 % Analytical kappa using the explicit equation
 kappa_ana = abs(y_double_prime) ./ (1 + y_prime.^2).^1.5;
 
+%% RELATIVE ERROR CALCULATION
+% Calculate the normalized error in curvature
+rel_err_kappa = abs(kappa_num(idx_top) - kappa_ana) ./ kappa_ana;
+
 %% PLOT COMPARISON
 figure;
-tiledlayout(1, 2, "TileSpacing", "compact");
+tiledlayout(1, 3, "TileSpacing", "compact");
 
+% --- TILE 1: CURVATURE ---
 ax1 = nexttile;
 hold on; grid on;
 set(ax1, 'YScale', 'log'); 
-
-% Plot against physical x-coordinates
-plot(x_top, kappa_ana, "r-", "LineWidth", 2, "DisplayName", "Analytical Curvature");
-plot(x_top, kappa_num(idx_top), "b--", "LineWidth", 2, "DisplayName", "Numerical Curvature (CDS)");
-
-xlabel('Chord Position (x)');
+plot(x_top, kappa_ana, "r-", "LineWidth", 1.5, "DisplayName", "Analytical Curvature");
+plot(x_top, kappa_num(idx_top), "b-", "LineWidth", 1.5, "DisplayName", "Numerical Curvature (CDS)");
+xlabel('Chord (x)');
 ylabel('Curvature (\kappa)');
-title('Curvature Comparison: Top Surface of NACA 0012');
+title('Curvature Comparison: Top Surface');
 legend;
-
-% Limit the y-axis to see the main chord body clearly 
-% (Otherwise the massive leading edge spike dominates the visual scale)
-ylim([0, 100]);
+ylim([0.1, 100]); % Adjusted lower limit slightly for log scale
 xlim([0, 1]);
 
 %% RADIUS OF CURVATURE COMPARISON
-
 % 1. Calculate Numerical Radius
 r_num = 1 ./ kappa_num(idx_top);
-
 % 2. Calculate Analytical Radius
 r_ana = 1 ./ kappa_ana;
-
 % 3. Override the Leading Edge Singularity (x = 0)
-% The mathematical limit for a NACA 4-digit LE radius is 1.1019 * t^2
-% Assuming idx_top(1) is exactly the leading edge where x = 0
 t = 0.12;
 r_ana(1) = 1.1019 * t^2; 
 
-%% PLOT RADIUS COMPARISON
+% --- TILE 2: RADIUS ---
 ax2 = nexttile;
 hold on; grid on;
-
-
-% Plot against physical x-coordinates
 plot(x_top, r_ana, "r-", "LineWidth", 1.5, "DisplayName", "Analytical Radius");
 plot(x_top, r_num, "b-", "LineWidth", 1.5, "DisplayName", "Numerical Radius (CDS)");
-
-xlabel('Chord Position (x)');
+xlabel('Chord (x)');
 ylabel('Radius of Curvature (r)');
-title('Radius of Curvature Comparison: Top Surface of NACA 0012');
+title('Radius of Curvature Comparison');
 legend('Location', 'northwest');
-
-% Limit the y-axis. The radius goes to infinity as the aerofoil 
-% flattens out towards the trailing edge. Limiting to y=2 keeps 
-% the leading edge and mid-chord features readable.
 ylim([0, 8.5]);
 xlim([0, 1]);
+
+% --- TILE 3: NORMALIZED ERROR ---
+ax3 = nexttile;
+hold on; grid on;
+plot(x_top, rel_err_kappa*100, "k-", "LineWidth", 1.5, "DisplayName", "Relative Error (\kappa)");
+xlabel('Chord (x)');
+ylabel('Percentage Error (%)');
+title('Normalized Curvature Error');
+legend('Location', 'best');
+xlim([0, 1]);
+
+%% FULL AEROFOIL NUMERICAL CURVATURE PLOT
+figure;
+hold on; grid on;
+
+% Define the full index range
+idx_full = 1:length(kappa_num);
+
+% Plot the full numerical curvature array
+plot(idx_full, kappa_num, 'b-', 'LineWidth', 1.5, 'DisplayName', 'Numerical Curvature');
+
+% Add vertical reference lines for geometric landmarks
+% Assuming a 257-point O-mesh starting at the lower TE and wrapping to the upper TE
+xline(1, 'k--', 'Lower TE', 'LabelVerticalAlignment', 'bottom');
+xline(129, 'r--', 'Leading Edge', 'LabelVerticalAlignment', 'bottom');
+xline(length(kappa_num), 'k--', 'Upper TE', 'LabelVerticalAlignment', 'bottom');
+
+% Format the plot
+set(gca, 'YScale', 'log'); 
+xlabel('Node Index (Lower TE \rightarrow LE \rightarrow Upper TE)');
+ylabel('Curvature (\kappa)');
+title('Numerical Curvature Across Entire O-Mesh');
+xlim([1, length(kappa_num)]);
+% Set a reasonable lower limit to avoid graphing floating-point noise near zero
+ylim([1e-2, 100]); 
+hold off;
