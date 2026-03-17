@@ -52,14 +52,28 @@ Ax_exact = [x_lower, y_lower; x_upper(2:end), y_upper(2:end)];
 
 
 %% Curvature of NACA12
-Cont_curv = abs(d2N12 + 1e-6) ./ ((1 + (dN12 + 1e-6).^2).^1.5);
-figure;
-plot (1:1001, 1/Cont_curv);
+Cont_curv = abs((d2N12) ./ ((1 + (dN12).^2).^1.5));
+rad = 1./Cont_curv;
 
+
+[grad1, grad2] = CentralDifferenceDeriv(Ax);
+kappa = abs(grad1(:,1) .* grad2(:,2) - grad1(:,2) .* grad2(:,1)) ./ ...
+        ((grad1(:,1).^2 + grad1(:,2).^2).^1.5);
+r = 1./kappa;
 
 figure; hold on;
-plot(1:1001, dN12, "r-", "DisplayName", "1st Deriv");
-plot(1:1001, d2N12, "b-", "DisplayName", "2nd Deriv")
+plot((1:1001)/1001, flip(Cont_curv), "b--");
+plot ((1:1001)/1001, flip(rad), "b-");
+plot((1:257)/129, kappa, "r--");
+plot((1:257)/129, r, "r-")
+
+figure; hold on;
+plot((1:1001)/2001, dN12, "r-", "DisplayName", "1st Deriv, Cont");
+plot((1:257)/257, grad1(:,2)./grad1(:,1), "b-", "DisplayName", "1st Deriv, CDS");
+plot((1:1001)/2001, d2N12, "r-", "DisplayName", "2nd Deriv")
+plot((1:257)/257, grad2(:,2)./grad2(:,1), "b-", "DisplayName", "2nd Deriv, CDS");
+legend;
+ylim([-30, 30]);
 
 
 
