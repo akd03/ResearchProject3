@@ -52,7 +52,7 @@ plot(x_top, kappa_ana, "r-", "LineWidth", 1.5, "DisplayName", "Analytical Curvat
 plot(x_top, kappa_num(idx_top), "b-", "LineWidth", 1.5, "DisplayName", "Numerical Curvature (CDS)");
 xlabel('Chord (x)');
 ylabel('Curvature (\kappa)');
-title('Curvature Comparison: Top Surface');
+title('Curvature Comparison');
 legend;
 ylim([0.1, 100]); % Adjusted lower limit slightly for log scale
 xlim([0, 1]);
@@ -81,7 +81,7 @@ xlim([0, 1]);
 % --- TILE 3: NORMALIZED ERROR ---
 ax3 = nexttile;
 hold on; grid on;
-plot(x_top, rel_err_kappa*100, "k-", "LineWidth", 1.5, "DisplayName", "Relative Error (\kappa)");
+plot(x_top, rel_err_kappa*100, "k-", "LineWidth", 1.5, "DisplayName", "Pcnt Error (\kappa)");
 xlabel('Chord (x)');
 ylabel('Percentage Error (%)');
 title('Normalized Curvature Error');
@@ -105,7 +105,7 @@ xline(129, 'r--', 'Leading Edge', 'LabelVerticalAlignment', 'bottom');
 xline(length(kappa_num), 'k--', 'Upper TE', 'LabelVerticalAlignment', 'bottom');
 
 % Format the plot
-set(gca, 'YScale', 'log'); 
+%set(gca, 'YScale', 'log'); 
 xlabel('Node Index (Lower TE \rightarrow LE \rightarrow Upper TE)');
 ylabel('Curvature (\kappa)');
 title('Numerical Curvature Across Entire O-Mesh');
