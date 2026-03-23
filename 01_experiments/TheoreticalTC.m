@@ -1,7 +1,7 @@
 %% THEORETICAL TIME COMPLEXITY ANALYSIS
 % Fixed parameters
-M = 257;        % Number of nodes in the candidate mesh
-N = 100;        % Fixed total number of control points (N_IP + N_G)
+M = 1000000;        % Number of nodes in the candidate mesh
+N = 1000;        % Fixed total number of control points (N_IP + N_G)
 
 % Independent variable array (Number of Initial Points)
 N_IP_vals = 0:N;
