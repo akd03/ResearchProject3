@@ -17,7 +17,7 @@ Ax = Mx(1:Ni, 1:2);
 
 %% NUMERICAL CURVATURE (CDS)
 % Calculate the full loop to maintain smooth transitions at the LE
-[grad1, grad2] = CentralDifferenceDeriv(Ax);
+[grad1, grad2] = CentralDifferenceDeriv(Ax, 0.25);
 
 % Numerical kappa using the parametric equation
 kappa_num = abs(grad1(:,1) .* grad2(:,2) - grad1(:,2) .* grad2(:,1)) ./ ...
