@@ -25,15 +25,16 @@ Nx_idx_base = [1; 129];
  
 %% DEFORMATION
 % True Deformation
-DAx = Rotate(Ax, 40, 0.5);
-DAx = Translate(DAx, [0, 0]);
+%DAx = Rotate(Ax, 40, 0.5);
+%DAx = Translate(DAx, [0, 0]);
+DAx = NACACamber(Ax, 0.02, 0.4);
 RAx = DAx - Ax;
 
 %% PARAMETER SWEEP & GREEDY ALGORITHM
 SF_R = 3;
 %N_vals = [30, 40, 50, 60, 100];
-N_vals = [100];
-pct_vals = [0, 0.1, 0.20, 0.3, 0.40, 0.5, 0.60, 0.7, 0.80, 0.9];
+N_vals = [255];
+pct_vals = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
 %N_vals = [60];
 %pct_vals = [0.5];
 

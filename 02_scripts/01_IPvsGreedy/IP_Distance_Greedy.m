@@ -9,7 +9,7 @@
 
 
 %% LOAD MESH
-%{
+%
 % Load NACA Mesh
 MeshFile = fopen("05_meshes\NACA0012257x129.xyz", "r");
 Header = fscanf(MeshFile, '%d', 2);
@@ -24,7 +24,7 @@ Ax = [Mx(1:Ni,1), Mx(1:Ni,2)];
 Nx_idx = [1, 129];
 %}
 %% CARTESIAN MESH GENERATION
-%
+%{
 x_min = -5;
 x_max = 5;
 y_min = -5;
@@ -46,8 +46,9 @@ Nx_idx = [1, 65];
 
 %% DEFORMATION
 % True Deformation
-DAx = Rotate(Ax, 30, 0);
-DAx = Translate(DAx, [0, 1]);
+%DAx = Rotate(Ax, 30, 0);
+%DAx = Translate(DAx, [0, 1]);
+DAx = NACACamber(Ax, 0.05, 0.4);
 RAx = DAx - Ax;
 
 %% INITIAL POINT SELECTION

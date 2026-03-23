@@ -28,24 +28,44 @@ plot(DLx(:,1), DLx(:,2), "ro-");
 
 
 %% DEFINE NACA 2412 CAMBER FUNCTIONS
-m = 0.05;
-p = 0.7;
-
-% Camber line equation (Piecewise)
-yc_func = @(x) (x < p) .* (m/p^2 .* (2*p.*x - x.^2)) + ...
-               (x >= p) .* (m/(1-p)^2 .* ((1-2*p) + 2*p.*x - x.^2));
-
-% Gradient equation (Piecewise)
-dyc_func = @(x) (x < p) .* (2*m/p^2 .* (p - x)) + ...
-                (x >= p) .* (2*m/(1-p)^2 .* (p - x));
-
-%% DEFORM MESH
-DAx_NACA = GeneralCamber(Ax, yc_func, dyc_func);
+DAx_NACA = NACACamber(Ax, 0.02, 0.4);
 
 % Plot to verify
 figure; hold on; axis equal; grid on;
 plot(Ax(:,1), Ax(:,2), 'b-', 'DisplayName', 'Original 0012');
 plot(DAx_NACA(:,1), DAx_NACA(:,2), 'r-', 'DisplayName', 'Cambered 2412');
-plot(Lx(:,1), Lx(:,2), "b-");
-plot(Lx(:,1), yc_func(Lx(:,1)), "r-");
 legend;
+
+
+
+%% CIRCULAR CAMBER (Fixed LE/TE at y=0)
+R_circ = 2.5; % Target bend radius
+
+% 1. Calculate the center of the circle (h, k)
+h = 0.5;
+% k must be negative so the arc bows upwards
+k = -sqrt(R_circ^2 - h^2); 
+
+% 2. Define the exact circle equation and its derivative
+yc_circ = @(x) k + sqrt(R_circ^2 - (x - h).^2);
+dyc_circ = @(x) (h - x) ./ sqrt(R_circ^2 - (x - h).^2);
+
+% 3. Apply the deformation using your generalized function
+DAx_Circ = GeneralCamber(Ax, yc_circ, dyc_circ);
+
+%% PLOT CIRCULAR CAMBER
+figure; 
+hold on; axis equal; grid on;
+
+% Plot Aerofoils
+plot(Ax(:,1), Ax(:,2), 'b-', 'DisplayName', 'Original 0012');
+plot(DAx_Circ(:,1), DAx_Circ(:,2), 'm-', 'DisplayName', sprintf('Circular Camber (R=%g)', R_circ));
+
+% Plot Camber Lines
+plot(Lx(:,1), Lx(:,2), "b-", 'HandleVisibility', 'off'); % Straight chord
+plot(Lx(:,1), yc_circ(Lx(:,1)), "m--", 'LineWidth', 1.5, 'DisplayName', 'Circular Chord Line');
+
+xlabel('X'); ylabel('Y');
+title('Circular Camber Deformation (Fixed LE/TE)');
+legend('Location', 'best');
+hold off;
