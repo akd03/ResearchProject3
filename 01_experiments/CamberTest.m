@@ -28,7 +28,7 @@ plot(DLx(:,1), DLx(:,2), "ro-");
 
 
 %% DEFINE NACA 2412 CAMBER FUNCTIONS
-DAx_NACA = NACACamber(Ax, 0.02, 0.4);
+DAx_NACA = NACACamber(Ax, 0.02, 0.5);
 
 % Plot to verify
 figure; hold on; axis equal; grid on;
