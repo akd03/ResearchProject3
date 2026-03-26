@@ -32,7 +32,7 @@ RAx = DAx - Ax;
 
 %% PARAMETER SWEEP & GREEDY ALGORITHM
 SF_R = 3;
-N_vals = [255];
+N_vals = [254];
 pct_vals = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
 M = size(Ax, 1); % Total number of candidate nodes for complexity math
 
@@ -98,7 +98,7 @@ for N = N_vals
                     current_cost = current_cost + M;
                 else
                     % Quartic Greedy Cost (Matrix Solve + Field Eval)
-                    current_cost = current_cost + (k^3 + M * k);
+                    current_cost = current_cost + (k^3 + (M - k) * k);
                 end
                 cost_full(k) = current_cost;
             end
@@ -131,3 +131,52 @@ end
 %% ANIMATION OF POINT ADDITION
 %num_base = length(Nx_idx_base);
 %PlotPointSeq(Ax, Nx_idx_final, num_base, N_IP, 0.1);
+
+
+%% COMPUTATIONAL SAVINGS ANALYSIS (Appended Figure)
+% Preallocate array to store the total cost for each evaluated percentage
+total_costs = zeros(1, length(pct_vals));
+
+for i = 1:length(pct_vals)
+    % Use the exact variables from your main loop
+    n_ip = round(N * pct_vals(i));
+    n_g = N - n_ip;
+    
+    % 1. FPS Cost
+    cost_fps = M * n_ip;
+    
+    % 2. Greedy Cost
+    if n_g > 0
+        k_greedy = (n_ip + 1):N;
+        cost_g = sum(k_greedy.^3 + (M - k_greedy) .* k_greedy);
+    else
+        cost_g = 0;
+    end
+    
+    % Total Cost for this specific ratio
+    total_costs(i) = cost_fps + cost_g;
+end
+
+% Baseline is the 0% initial points case (index 1 of your pct_vals)
+baseline_cost = total_costs(1);
+
+% Calculate percentage of operations saved relative to baseline
+pct_saved = ((baseline_cost - total_costs) ./ baseline_cost) * 100;
+
+%% PLOT SAVINGS FIGURE
+figure;
+hold on; grid on;
+
+% Plot directly using your evaluated loop variables
+plot(pct_vals, pct_saved, 'k-o', 'LineWidth', 2, 'MarkerSize', 8, 'MarkerFaceColor', 'r');
+
+% Formatting
+xlabel('Ratio of Initial Points (N_{IP} / N)');
+ylabel('Total Operations Saved (%)');
+title(sprintf('Computational Savings vs. FPS Proportion (M = %d, N = %d)', M, N));
+
+% Align the x-axis ticks exactly with your pct_vals array
+xticks(pct_vals); 
+xticklabels(strcat(num2str((pct_vals.*100)'), '%')); 
+
+hold off;
