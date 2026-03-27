@@ -82,7 +82,7 @@ for N = N_vals
         
         % Greedy Algorithm
         if N_G > 0
-            [Nx_idx_final, max_err_history, rmse_history] = Greedy(Nx_idx, Ax, RAx, SF_R, "K", N_G);
+            [Nx_idx_final, max_err_history, rmse_history] = GreedyCholesky(Nx_idx, Ax, RAx, SF_R, "K", N_G);
             
             % Shift the x-axis for error plots to start exactly at N_IP
             iterations = N_IP + (1:length(max_err_history)) - 1; 
@@ -97,8 +97,8 @@ for N = N_vals
                     % Linear FPS Cost
                     current_cost = current_cost + M;
                 else
-                    % Quartic Greedy Cost (Matrix Solve + Field Eval)
-                    current_cost = current_cost + (k^3 + (M - k) * k);
+                    % Cubic Greedy Cost (Cholesky Update/Solve + Field Eval)
+                    current_cost = current_cost + (k^2 + (M - k) * k);
                 end
                 cost_full(k) = current_cost;
             end
@@ -145,10 +145,10 @@ for i = 1:length(pct_vals)
     % 1. FPS Cost
     cost_fps = M * n_ip;
     
-    % 2. Greedy Cost
+    % 2. Greedy Cost (Cholesky)
     if n_g > 0
         k_greedy = (n_ip + 1):N;
-        cost_g = sum(k_greedy.^3 + (M - k_greedy) .* k_greedy);
+        cost_g = sum(k_greedy.^2 + (M - k_greedy) .* k_greedy);
     else
         cost_g = 0;
     end
