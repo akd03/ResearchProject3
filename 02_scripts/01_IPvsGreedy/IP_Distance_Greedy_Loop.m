@@ -1,16 +1,16 @@
-%% VARIABLE NAMING CONVENTION
-%  Nx       Known (Control) Points
-%  Nx_idx   Nx indices in Ax
-%  Ax       Aerofoil Mesh Points
-%  RAx      Applied Deformation 
-%  DAx      Actual Aerofoil Position After Rx
-%  Mx       Volume Mesh Points
+%% VARIABLE NAMING CONVENTION                                              
+%  Nx       Known (Control) Points                                         
+%  Nx_idx   Nx indices in Ax                                               
+%  Ax       Aerofoil Mesh Points                                           
+%  RAx      Applied Deformation                                            
+%  DAx      Actual Aerofoil Position After Rx                              
+%  Mx       Volume Mesh Points                                             
 
-%% LOAD MESH
+%% LOAD MESH                                                               
 
-% Load NACA Mesh
-MeshFile = fopen("05_meshes\NACA0012257x129.xyz", "r");
-Header = fscanf(MeshFile, '%d', 2);
+% Load NACA Mesh                                                           
+MeshFile = fopen("05_meshes\NACA0012257x129.xyz", "r");                    
+Header = fscanf(MeshFile, '%d', 2);                                        
 Ni = Header(1);
 Nj = Header(2);
 MeshData = textscan(MeshFile, '%f %f %f');
@@ -20,7 +20,7 @@ fclose(MeshFile);
 Mx = [reshape(MeshData{1}, [Ni*Nj, 1]), reshape(MeshData{3}, [Ni*Nj, 1])];
 Ax = [Mx(1:Ni,1), Mx(1:Ni,2)];
 
-% Initial Control Points - LE and TE
+% Initial Control Points - LE and TE                                       
 Nx_idx_base = [1; 129];
  
 %% DEFORMATION
