@@ -7,7 +7,6 @@
 %  Mx       Volume Mesh Points                                             
 
 %% LOAD MESH                                                               
-
 % Load NACA Mesh                                                           
 MeshFile = fopen("05_meshes\NACA0012257x129.xyz", "r");                    
 Header = fscanf(MeshFile, '%d', 2);                                        
@@ -47,7 +46,7 @@ for N = N_vals
     set(ax1, 'YScale', 'log'); 
     xlabel(ax1, 'Total Control Points Added (k)');
     ylabel(ax1, 'Maximum Deformation Error');
-    title(ax1, sprintf('Max Error Convergence (N = %d)', N));
+    title(ax1, sprintf('Max Error Convergence (N = M-1)'));
     
     % Setup RMSE Axis (Middle Tile)
     ax2 = nexttile;
@@ -55,15 +54,15 @@ for N = N_vals
     set(ax2, 'YScale', 'log'); 
     xlabel(ax2, 'Total Control Points Added (k)');
     ylabel(ax2, 'Root Mean Square Error (RMSE)');
-    title(ax2, sprintf('RMSE Convergence (N = %d)', N));
-
+    title(ax2, sprintf('RMSE Convergence (N = M-1)'));
+    
     % Setup Computational Cost Axis (Right Tile)
     ax3 = nexttile;
     hold(ax3, 'on'); grid(ax3, 'on');
     set(ax3, 'YScale', 'log'); 
     xlabel(ax3, 'Total Control Points Added (k)');
     ylabel(ax3, 'Cumulative Operations');
-    title(ax3, sprintf('Theoretical Cost (N = %d)', N));
+    title(ax3, sprintf('Theoretical Cost (N = M-1)'));
     
     legend_labels = strings(length(pct_vals), 1);
     
@@ -96,6 +95,10 @@ for N = N_vals
                 if k <= N_IP
                     % Linear FPS Cost
                     current_cost = current_cost + M;
+                    % Add the one-off Cholesky setup cost once FPS is finished
+                    if k == N_IP
+                        current_cost = current_cost + (N_IP^3);
+                    end
                 else
                     % Cubic Greedy Cost (Cholesky Update/Solve + Field Eval)
                     current_cost = current_cost + (k^2 + (M - k) * k);
@@ -121,40 +124,31 @@ for N = N_vals
     legend(ax2, legend_labels, 'Location', 'northeast');
     legend(ax3, legend_labels, 'Location', 'northwest');
     
+    % Link axes correctly inside the loop
+    linkaxes([ax1, ax2], 'xy');
+    
     hold(ax1, 'off');
     hold(ax2, 'off');
     hold(ax3, 'off');
 end
 
-
-
 %% ANIMATION OF POINT ADDITION
 %num_base = length(Nx_idx_base);
 %PlotPointSeq(Ax, Nx_idx_final, num_base, N_IP, 0.1);
-
 
 %% COMPUTATIONAL SAVINGS ANALYSIS (Appended Figure)
 % Preallocate array to store the total cost for each evaluated percentage
 total_costs = zeros(1, length(pct_vals));
 
 for i = 1:length(pct_vals)
-    % Use the exact variables from your main loop
     n_ip = round(N * pct_vals(i));
     n_g = N - n_ip;
     
-    % 1. FPS Cost
-    cost_fps = M * n_ip;
-    
-    % 2. Greedy Cost (Cholesky)
-    if n_g > 0
-        k_greedy = (n_ip + 1):N;
-        cost_g = sum(k_greedy.^2 + (M - k_greedy) .* k_greedy);
-    else
-        cost_g = 0;
-    end
+    % Interface with the standalone Costing function
+    [~, ~, ~, ~, total_new] = Costing(M, n_ip, n_g);
     
     % Total Cost for this specific ratio
-    total_costs(i) = cost_fps + cost_g;
+    total_costs(i) = total_new;
 end
 
 % Baseline is the 0% initial points case (index 1 of your pct_vals)
@@ -180,3 +174,27 @@ xticks(pct_vals);
 xticklabels(strcat(num2str((pct_vals.*100)'), '%')); 
 
 hold off;
+
+%% LOCAL FUNCTIONS
+function [cost_fps, cost_greedy_old, cost_greedy_new, total_old, total_new] = Costing(M, N_IP, N_G)
+    % 1. FPS Cost: O(M * N_IP)
+    cost_fps = M * N_IP;
+    
+    N = N_IP + N_G;
+
+    % 2. Greedy Costs
+    if N_G > 0
+        k = (N_IP + 1):N;
+        % Original Method: k^3 + M*k
+        cost_greedy_old = sum(k.^3 + M .* k);
+        % New Method: Setup chol() + k^2 + (M-k)*k
+        cost_greedy_new = (N_IP^3) + sum(k.^2 + (M - k) .* k);
+    else
+        cost_greedy_old = 0;
+        cost_greedy_new = (N_IP^3); 
+    end
+    
+    % 3. Total Costs
+    total_old = cost_fps + cost_greedy_old;
+    total_new = cost_fps + cost_greedy_new;
+end
