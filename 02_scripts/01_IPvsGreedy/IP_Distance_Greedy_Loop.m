@@ -167,7 +167,7 @@ plot(pct_vals, pct_saved, 'k-o', 'LineWidth', 2, 'MarkerSize', 8, 'MarkerFaceCol
 % Formatting
 xlabel('Ratio of Initial Points (N_{IP} / N)');
 ylabel('Total Operations Saved (%)');
-title(sprintf('Computational Savings vs. FPS Proportion (M = %d, N = %d)', M, N));
+title(sprintf('Computational Savings vs. FPS Proportion (M = %d, N = %d)', M, 256));
 
 % Align the x-axis ticks exactly with your pct_vals array
 xticks(pct_vals); 
