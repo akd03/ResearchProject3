@@ -96,6 +96,7 @@ end
 
 %% 5. LIGHTING AND FORMATTING
 lighting gouraud;
+%xlim([0, 50]); ylim([0, 50]), zlim([-10, 5]);
 camlight('headlight');
 colormap('turbo');
 cb = colorbar; cb.Label.String = 'Displacement Magnitude';
@@ -106,6 +107,6 @@ title('3D Aerofoil Surface Deformation');
 if ~isempty(h_orig) && ~isempty(h_def)
     legend([h_orig, h_def], {'Original Mesh', 'Deformed Mesh'}, 'Location', 'northeast');
 end
-view(30, 30);
+view(225, 30);
 hold off;
 end
