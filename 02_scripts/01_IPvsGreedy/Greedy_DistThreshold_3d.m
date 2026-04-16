@@ -9,7 +9,7 @@
 %
 clear; clc; 
 
-filename = '\05_meshes\01_3d_meshes\surfacepoints1M.plt';
+filename = '\05_meshes\01_3d_meshes\surfacepoints140K.plt';
 fid = fopen(filename, 'r');
 headerLines = 0;
 while ~feof(fid)
@@ -33,13 +33,13 @@ Nx_idx_base = [1];
 DAx = Ax;
 % Applying a dummy 3D twist along the span for testing purposes.
 % Replace this with your actual 3D deformation mapping function.
-DAx(:,3) = DAx(:,3) + 0.05 * Ax(:,2).^2; 
+DAx(:,3) = DAx(:,3) + 0.005 * Ax(:,2).^2; 
 RAx = DAx - Ax;
 
 %% PARAMETER SWEEP: MAX ERROR THRESHOLD GREEDY
 SF_R = 100; % Updated support radius
-max_err_threshold = 1e-5; % Target tolerance
-N_IP_vals = [0, 5, 10, 20, 40, 80, 150, 200]; 
+max_err_threshold = 1e-4; % Target tolerance
+N_IP_vals = [0, 10, 25, 50, 100, 150, 200]; 
 
 figure;
 tiledlayout(1, 3, "TileSpacing", "compact");
@@ -121,7 +121,8 @@ hold(ax3, 'off');
 
 %% SMOOTH OPTIMIZATION CURVE: N_IP vs TOTAL OPERATIONS
 %
-N_IP_vals_smooth = 0:1:500; 
+disp('first loop complete');
+N_IP_vals_smooth = 0:10:500; 
 total_operations = zeros(1, length(N_IP_vals_smooth));
 final_N_totals = zeros(1, length(N_IP_vals_smooth));
 
@@ -239,3 +240,5 @@ save(save_filepath, ...
     'fps_points', 'greedy_idx', 'greedy_points');
 
 fprintf('Data successfully saved.\n');
+
+PlotDeformation3D(Ax, DAx);

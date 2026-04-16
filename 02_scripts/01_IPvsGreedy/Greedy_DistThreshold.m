@@ -28,7 +28,7 @@ RAx = DAx - Ax;
 %% PARAMETER SWEEP: MAX ERROR THRESHOLD GREEDY
 SF_R = 3;
 max_err_threshold = 1e-6; % Suggested starting threshold for Max Error
-N_IP_vals = [0, 5, 10, 15, 20, 30, 50]; 
+N_IP_vals = [0, 5, 10, 15, 20, 25, 30, 40, 50]; 
 M = size(Ax, 1); 
 
 figure;

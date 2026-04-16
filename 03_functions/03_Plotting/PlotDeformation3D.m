@@ -53,7 +53,7 @@ for b = 1:length(blocks)
             'FaceColor', [0.75 0.75 0.75], 'EdgeColor', 'none', 'FaceAlpha', 0.4);
         
         % Plot Deformed Mesh
-        p2 = surf(DX_grid, DY_grid, DZ_grid, C_grid, 'EdgeColor', 'k', 'FaceAlpha', 1.0);
+        p2 = surf(DX_grid, DY_grid, DZ_grid, C_grid, 'EdgeColor', 'none', 'FaceAlpha', 1.0);
         
         if b == 1
             h_orig = p1; h_def = p2;
@@ -83,7 +83,7 @@ if length(blocks) == 2 && ~isempty(boundaries(1).X_first) && ~isempty(boundaries
     Z_stitch_1 = [boundaries(1).Z_last(1:Nj_shared); boundaries(2).Z_first(1:Nj_shared)];
     C_stitch_1 = [boundaries(1).C_last(1:Nj_shared); boundaries(2).C_first(1:Nj_shared)];
     
-    surf(X_stitch_1, Y_stitch_1, Z_stitch_1, C_stitch_1, 'EdgeColor', 'k', 'FaceAlpha', 1.0);
+    surf(X_stitch_1, Y_stitch_1, Z_stitch_1, C_stitch_1, 'EdgeColor', 'none', 'FaceAlpha', 1.0);
     
     % STITCH 2: Upper block end to Lower block start (Usually the Trailing Edge)
     X_stitch_2 = [boundaries(2).X_last(1:Nj_shared); boundaries(1).X_first(1:Nj_shared)];
