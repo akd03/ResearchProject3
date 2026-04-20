@@ -1,9 +1,9 @@
-function [Nx_idx_out, max_err_history, rmse_history] = Greedy(Nx_idx_in, Ax, RAx, SF_R, options)
-%GREEDY_SELECTION Adds control points based on maximum deformation error.
+function [Nx_idx_out, max_err_history, rmse_history] = Greedy_Standard(Nx_idx_in, Ax, RAx, SF_R, options)
+%GREEDY_STANDARD Adds control points using full matrix recalculation (Baseline).
 arguments (Input)
     Nx_idx_in            % Initial Point Indices
-    Ax                   % Complete List of Aerofoil Points
-    RAx                  % Applied Deformation (Displacement vectors) at all nodes
+    Ax                   % Complete List of Aerofoil/Wing Points
+    RAx                  % Applied Deformation (Displacement vectors)
     SF_R                 % Support Radius
     
     options.err_tol (1,1) double = 0     
@@ -14,70 +14,53 @@ arguments (Output)
     max_err_history      % Array tracking the maximum error at each step
     rmse_history         % Array tracking the root mean square error at each step
 end
-
 %% FUNCTION BODY
 Nx_idx_out = Nx_idx_in;
 max_err_history = [];
 rmse_history = [];
 iterations = 0;
-
 M = size(Ax, 1); % Total number of nodes
-
-% Initialize the evaluation matrix for the starting points
-Dist_initial = Norm(Ax, Ax(Nx_idx_in, :));
-CEx = Phi_WC2(Dist_initial / SF_R);
 max_err = Inf; 
 
 % Greedy Loop
 while (max_err > options.err_tol) && (iterations < options.K)
     
-    % Extract the known displacement values for the control points
+    % 1. Extract coordinates and displacements for current control points
+    Ax_c = Ax(Nx_idx_out, :);
     RNx = RAx(Nx_idx_out, :);                                       
-    CNx = CEx(Nx_idx_out, :);              
     
-    % Solve for the weights (k x k system)
-    Gamma_x = CNx \ RNx(:, 1);             
-    Gamma_y = CNx \ RNx(:, 2);             
+    % 2. BUILD INTERPOLATION MATRIX FROM SCRATCH (k x k)
+    Dist_c = Norm(Ax_c, Ax_c);
+    CNx = Phi_WC2(Dist_c / SF_R);
     
-    % --- LOGICAL INDEXING OPTIMIZATION ---
-    is_eval = true(M, 1);
-    is_eval(Nx_idx_out) = false; % Exclude active control points
+    % 3. SOLVE SYSTEM FROM SCRATCH (Vectorized for all dimensions)
+    Gamma = CNx \ RNx;             
     
-    eval_idx = find(is_eval); % Get global indices of the evaluation points
+    % 4. BUILD EVALUATION MATRIX FROM SCRATCH (M x k)
+    Dist_eval = Norm(Ax, Ax_c);
+    CEx = Phi_WC2(Dist_eval / SF_R);
     
-    % Interpolate the displacement field ONLY at the unselected indices
-    CEx_eval = CEx(is_eval, :);
-    Sx_x = CEx_eval * Gamma_x;                  
-    Sx_y = CEx_eval * Gamma_y;                  
+    % 5. EVALUATE ENTIRE MESH AND CALCULATE ERROR
+    Sx = CEx * Gamma;                  
+    Err = RAx - Sx;              
     
-    % Calculate the error ONLY at the evaluation indices
-    Err_x = RAx(is_eval, 1) - Sx_x;              
-    Err_y = RAx(is_eval, 2) - Sx_y;              
-    Err_mag = sqrt(Err_x.^2 + Err_y.^2);
+    % Calculate magnitude of the error vector (works for 2D or 3D)
+    Err_mag = sqrt(sum(Err.^2, 2));
     
-    % Find maximum error among the unselected points
-    [max_err, local_idx] = max(Err_mag);
+    % Zero out the error at existing control points to prevent re-selection
+    Err_mag(Nx_idx_out) = 0;
     
-    % Map the local index from Err_mag back to the global mesh array index
-    next_idx = eval_idx(local_idx);
+    % Find maximum error among the available points
+    [max_err, next_idx] = max(Err_mag);
     
-    % Calculate global RMSE
-    rmse_val = sqrt(sum(Err_x.^2 + Err_y.^2) / M);
-    % -------------------------------------
+    % Calculate global RMSE across all points and all dimensions
+    rmse_val = sqrt(sum(Err.^2, 'all') / M);
     
     max_err_history(end+1, 1) = max_err;
     rmse_history(end+1, 1) = rmse_val;
     
     if (max_err > options.err_tol) && (iterations < options.K)
         Nx_idx_out(end+1, 1) = next_idx;
-        
-        % Incrementally calculate the single new influence column
-        new_dist = Norm(Ax, Ax(next_idx, :));
-        new_CEx_col = Phi_WC2(new_dist / SF_R);
-        
-        % Append the new column to the existing evaluation matrix
-        CEx = [CEx, new_CEx_col];
-        
         iterations = iterations + 1;
     end
 end
