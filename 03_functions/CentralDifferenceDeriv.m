@@ -37,6 +37,7 @@ grad2 = [d2x, d2y];
 
 
 %% LAPLACIAN SMOOTHING
+
 if ~isempty(gamma)
     % shift gradients forward and back
     grad1_f = [grad1(2:end, :); grad1(end, :)];
