@@ -30,10 +30,10 @@ M = size(Ax, 1);
 Nx_idx_base = [1];
  
 %% DEFORMATION
-DAx = Ax;
+
 % Applying a dummy 3D twist along the span for testing purposes.
 % Replace this with your actual 3D deformation mapping function.
-DAx(:,3) = DAx(:,3) + 0.005 * Ax(:,2).^2; 
+
 RAx = DAx - Ax;
 
 %% PARAMETER SWEEP: MAX ERROR THRESHOLD GREEDY

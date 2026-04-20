@@ -27,9 +27,8 @@ M = size(Ax, 1);
 Nx_idx_base = [1];
  
 %% DEFORMATION
-DAx = Ax;
 % Applying a dummy 3D twist along the span for testing purposes.
-DAx(:,3) = DAx(:,3) + 0.005 * Ax(:,2).^2; 
+DAx = BendTwist3D(Ax, [24.9,0,-3.3], [47, 35.4, 1.6], 20, 20);
 RAx = DAx - Ax;
 
 %% PARAMETER SWEEP SETUP
