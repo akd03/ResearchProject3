@@ -9,7 +9,7 @@ end
 M = size(Ax, 1);
 Disp = sqrt(sum((DAx - Ax).^2, 2));
 
-figure;
+%figure;
 hold on; grid on; axis equal;
 
 %% 2. DYNAMIC MESH PARSING
