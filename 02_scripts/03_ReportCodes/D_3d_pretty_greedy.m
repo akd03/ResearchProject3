@@ -28,14 +28,13 @@ M = size(Ax, 1);
 Nx_idx_base = [1];
  
 %% DEFORMATION
-DAx = Ax;
 % Dummy 3D twist along the span for testing
-DAx(:,3) = DAx(:,3) + 0.005 * Ax(:,2).^2; 
+DAx = BendTwist3D(Ax, [24.9,0,-3.28], [47, 35.4, 1.55], 20, -20);
 RAx = DAx - Ax;
 
 %% SINGLE RUN EXECUTION
 SF_R = 100; 
-max_err_threshold = 1e-5; 
+max_err_threshold = 1e-4; 
 N_IP = 100;
 
 fprintf('Running FPS for %d Initial Points...\n', N_IP);
