@@ -49,7 +49,7 @@ s2_total_nodes = zeros(num_tol_tests, 1);
 s2_total_cost = zeros(num_tol_tests, 1);
 
 %% DATA GENERATION: SWEEP 1 (Fixed N)
-%{
+%
 fprintf('Running Sweep 1: Fixed N, Varying N_IP...\n');
 for i = 1:num_N_tests
     N = N_vals(i);
@@ -184,8 +184,8 @@ if ~exist('06_results', 'dir')
 end
 
 date_str = datestr(now, 'yyyymmdd');
-save_filename_s1 = sprintf('Test3_3DSweepFixedN_%s', date_str);
-save_filename_s2 = sprintf('Test4_3DSweepFixedTol_%s', date_str);
+save_filename_s1 = sprintf('Test6_3DSweepFixedN_%s', date_str);
+save_filename_s2 = sprintf('Test7_3DSweepFixedTol_%s', date_str);
 
 savefig(fig_sweep1, fullfile('06_results', [save_filename_s1, '.fig']));
 savefig(fig_sweep2, fullfile('06_results', [save_filename_s2, '.fig']));
