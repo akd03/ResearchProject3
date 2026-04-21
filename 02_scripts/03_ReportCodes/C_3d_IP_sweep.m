@@ -42,7 +42,7 @@ s1_final_err = cell(num_N_tests, 1);
 s1_total_cost = cell(num_N_tests, 1);
 
 % Setup for Sweep 2 (Fixed Tolerance, vary N_IP)
-err_threshold = 1e-5;
+err_threshold = 1e-4;
 s2_N_IP_vals = 0:100; % Step size 1
 num_tol_tests = length(s2_N_IP_vals);
 s2_total_nodes = zeros(num_tol_tests, 1);
@@ -53,6 +53,7 @@ fprintf('Running Sweep 1: Fixed N, Varying N_IP...\n');
 for i = 1:num_N_tests
     N = N_vals(i);
     N_IP_range = 0:(N - 1);
+    disp(N)
     
     current_N_IP = zeros(length(N_IP_range), 1);
     current_err = zeros(length(N_IP_range), 1);
@@ -60,6 +61,9 @@ for i = 1:num_N_tests
     
     for j = 1:length(N_IP_range)
         N_IP = N_IP_range(j);
+        if mod(N_IP, 10) == 0
+            disp(N_IP)
+        end
         N_G = N - N_IP;
         Nx_idx = Nx_idx_base;
         
