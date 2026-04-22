@@ -3,7 +3,7 @@
 %% MESH PROFILE VISUALIZER: TOP AND BOTTOM SURFACE TEST
 clear; clc; close all;
 
-filename = '\05_meshes\01_3d_meshes\surfacepoints140K.plt';
+filename = '\05_meshes\01_3d_meshes\surfacepoints8M.plt';
 
 %% 1. READ HEADER AND EXTRACT DATA
 fid = fopen(filename, 'r');
