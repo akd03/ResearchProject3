@@ -5,7 +5,6 @@
 %  RAx      Applied Deformation                                            
 %  DAx      Actual Aerofoil Position After Rx                              
 %  Mx       Volume Mesh Points                                             
-
 clear; clc; close all;
 
 %% LOAD MESH                                                               
@@ -80,9 +79,15 @@ fprintf('Calculating theoretical operational costs...\n');
 for i = 1:num_tests
     pct = pct_vals(i);
     N_IP = round(N * pct);
+    N_G = N - N_IP;
     
     all_k_full{i} = 1:N;
-    all_cost{i} = CalculateCumulativeCost(M, N, N_IP);
+    
+    % Get the per-step cost arrays using the theoretical formulas
+    [cost_fps, ~, cost_inc] = CostStep(M, N_IP, N_G);
+    
+    % Combine arrays and calculate the cumulative sum for plotting
+    all_cost{i} = cumsum([cost_fps, cost_inc]);
 end
 
 %% PLOT 1: QUADRUPLE LAYOUT (SHAPE, MAX ERROR, RMSE, COST)
@@ -142,43 +147,15 @@ for i = 1:num_tests
     % Plot Cost (Full range 1 to N)
     plot(ax4, all_k_full{i}, all_cost{i}, '-', 'LineWidth', 1.5, 'Color', c);
 end
-
 legend(ax2, legend_labels, 'Location', 'northeast');
 
 % Keep error axes synced (Cost is excluded as magnitudes differ)
 linkaxes([ax2, ax3], 'xy'); 
-
 hold(ax1, 'off'); hold(ax2, 'off'); hold(ax3, 'off'); hold(ax4, 'off');
 
 %% SAVE PLOTS
-
-
 date_str = datestr(now, 'yyyymmdd');
 save_filename = sprintf('Test2_2DErrorAndCost_%s', date_str);
-
 savefig(fig_main, fullfile('06_results', [save_filename, '.fig']));
 %exportgraphics(fig_main, fullfile('06_results', [save_filename, '.pdf']), 'ContentType', 'vector');
-
 fprintf('Plot saved to /06_results/%s.fig\n', save_filename);
-
-%% LOCAL FUNCTIONS
-function cost_full = CalculateCumulativeCost(M, N, N_IP)
-    % Calculates the theoretical cumulative operations at each step k
-    cost_full = zeros(1, N);
-    current_cost = 0;
-    
-    for k = 1:N
-        if k <= N_IP
-            % Linear FPS Cost
-            current_cost = current_cost + M;
-            % Add the one-off Cholesky setup cost once FPS is finished
-            if k == N_IP
-                current_cost = current_cost + (N_IP^3);
-            end
-        else
-            % Cubic Greedy Cost (Cholesky Update/Solve + Field Eval)
-            current_cost = current_cost + (k^2 + (M - k) * k);
-        end
-        cost_full(k) = current_cost;
-    end
-end

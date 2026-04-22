@@ -6,7 +6,6 @@
 %  DAx      Actual Aerofoil Position After Rx                              
 %% LOAD 3D MESH       
 clear; clc; close all;
-
 filename = '05_meshes\01_3d_meshes\surfacepoints140K.plt';
 fid = fopen(filename, 'r');
 headerLines = 0;
@@ -82,7 +81,10 @@ for i = 1:num_N_tests
         end
         
         current_N_IP(j) = N_IP;
-        current_cost(j) = CalculateTotalCost(M, length(Nx_idx_base) + N, N_IP, length(Nx_idx_base));
+        
+        % Calculate Theoretical Cost using the external function (Incremental Cost)
+        % N_ip passed to CostTot includes both the base points and the FPS points
+        [~, current_cost(j)] = CostTot(M, length(Nx_idx_base) + N_IP, N_G);
     end
     
     s1_N_IP{i} = current_N_IP;
@@ -90,6 +92,7 @@ for i = 1:num_N_tests
     s1_total_cost{i} = current_cost;
 end
 %}
+
 %% DATA GENERATION: SWEEP 2 (Fixed Error Tolerance)
 fprintf('Running Sweep 2: Fixed Error Tolerance = %g...\n', err_threshold);
 for i = 1:num_tol_tests
@@ -112,7 +115,9 @@ for i = 1:num_tol_tests
     N_total = length(Nx_idx_base) + N_IP + N_G;
     
     s2_total_nodes(i) = N_total;
-    s2_total_cost(i) = CalculateTotalCost(M, N_total, N_IP, length(Nx_idx_base));
+    
+    % Calculate Theoretical Cost using the external function (Incremental Cost)
+    [~, s2_total_cost(i)] = CostTot(M, length(Nx_idx_base) + N_IP, N_G);
 end
 fprintf('Data generation complete.\n');
 
@@ -139,7 +144,6 @@ title(ax2, 'Theoretical Computational Cost');
 
 colors = colororder;
 legend_labels_s1 = strings(num_N_tests, 1);
-
 for i = 1:num_N_tests
     c_idx = mod(i-1, size(colors,1)) + 1; 
     c = colors(c_idx, :);
@@ -148,7 +152,6 @@ for i = 1:num_N_tests
     plot(ax2, s1_N_IP{i}, s1_total_cost{i}, '.-', 'LineWidth', 1.5, 'MarkerSize', 8, 'Color', c);
     legend_labels_s1(i) = sprintf('Total N = %d', N_vals(i));
 end
-
 legend(ax1, legend_labels_s1, 'Location', 'best');
 legend(ax2, legend_labels_s1, 'Location', 'best');
 hold(ax1, 'off'); hold(ax2, 'off');
@@ -175,38 +178,15 @@ title(ax4, 'Theoretical Computational Cost');
 
 plot(ax3, s2_N_IP_vals, s2_total_nodes, 'k.-', 'LineWidth', 1.5, 'MarkerSize', 8);
 plot(ax4, s2_N_IP_vals, s2_total_cost, 'k.-', 'LineWidth', 1.5, 'MarkerSize', 8);
-
 hold(ax3, 'off'); hold(ax4, 'off');
 
 %% SAVE PLOTS
 if ~exist('06_results', 'dir')
     mkdir('06_results');
 end
-
 date_str = datestr(now, 'yyyymmdd');
-save_filename_s1 = sprintf('Test6_3DSweepFixedN_%s', date_str);
-save_filename_s2 = sprintf('Test7_3DSweepFixedTol_%s', date_str);
-
+save_filename_s1 = sprintf('Test12_3DSweepFixedN_%s', date_str);
+save_filename_s2 = sprintf('Test13_3DSweepFixedTol_%s', date_str);
 savefig(fig_sweep1, fullfile('06_results', [save_filename_s1, '.fig']));
 savefig(fig_sweep2, fullfile('06_results', [save_filename_s2, '.fig']));
-
 fprintf('Plots saved to /06_results/\n');
-
-%% LOCAL FUNCTIONS
-function total_cost = CalculateTotalCost(M, N_Total, N_IP, N_Base)
-    % Calculates the total integrated cost at the final iteration
-    total_cost = 0;
-    
-    % 1. FPS Cost
-    total_cost = total_cost + (M * N_IP);
-    
-    % 2. Initial Matrix Factorization (Base Points + Initial Points)
-    N_init = N_Base + N_IP;
-    total_cost = total_cost + (N_init^3);
-    
-    % 3. Greedy Recurrence Loop Cost
-    if N_Total > N_init
-        k = (N_init + 1):N_Total;
-        total_cost = total_cost + sum(k.^2 + (M - k) .* k);
-    end
-end

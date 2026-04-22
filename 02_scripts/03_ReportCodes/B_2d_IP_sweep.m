@@ -5,7 +5,6 @@
 %  RAx      Applied Deformation                                            
 %  DAx      Actual Aerofoil Position After Rx                              
 %  Mx       Volume Mesh Points                                             
-
 clear; clc; close all;
 
 %% LOAD MESH                                                               
@@ -73,7 +72,9 @@ for i = 1:num_N_tests
         end
         
         current_N_IP(j) = N_IP;
-        current_cost(j) = CalculateTotalCost(M, N, N_IP);
+        
+        % Calculate Theoretical Cost using the external function (Incremental Cost)
+        [~, current_cost(j)] = CostTot(M, N_IP, N_G);
     end
     
     s1_N_IP{i} = current_N_IP;
@@ -99,7 +100,9 @@ for i = 1:num_tol_tests
     N_total = N_IP + N_G;
     
     s2_total_nodes(i) = N_total;
-    s2_total_cost(i) = CalculateTotalCost(M, N_total, N_IP);
+    
+    % Calculate Theoretical Cost using the external function (Incremental Cost)
+    [~, s2_total_cost(i)] = CostTot(M, N_IP, N_G);
 end
 fprintf('Data generation complete.\n');
 
@@ -162,40 +165,15 @@ title(ax4, 'Theoretical Computational Cost');
 
 plot(ax3, s2_N_IP_vals, s2_total_nodes, 'k.-', 'LineWidth', 1.5, 'MarkerSize', 8);
 plot(ax4, s2_N_IP_vals, s2_total_cost, 'k.-', 'LineWidth', 1.5, 'MarkerSize', 8);
-
 hold(ax3, 'off'); hold(ax4, 'off');
 
 %% SAVE PLOTS
 if ~exist('06_results', 'dir')
     mkdir('06_results');
 end
-
 date_str = datestr(now, 'yyyymmdd');
 save_filename_s1 = sprintf('Test3_SweepFixedN_%s', date_str);
 save_filename_s2 = sprintf('Test4_SweepFixedTol_%s', date_str);
-
 savefig(fig_sweep1, fullfile('06_results', [save_filename_s1, '.fig']));
 savefig(fig_sweep2, fullfile('06_results', [save_filename_s2, '.fig']));
-
 fprintf('Plots saved to /06_results/\n');
-
-%% LOCAL FUNCTIONS
-function total_cost = CalculateTotalCost(M, N, N_IP)
-    % Calculates the total integrated cost at the final iteration
-    total_cost = 0;
-    
-    % 1. FPS Cost
-    total_cost = total_cost + (M * N_IP);
-    
-    % 2. Cholesky Setup Cost (Factoring the initial N_IP matrix)
-    if N_IP > 0
-        total_cost = total_cost + (N_IP^3);
-    end
-    
-    % 3. Greedy Recurrence Loop Cost
-    N_G = N - N_IP;
-    if N_G > 0
-        k = (N_IP + 1):N;
-        total_cost = total_cost + sum(k.^2 + (M - k) .* k);
-    end
-end
