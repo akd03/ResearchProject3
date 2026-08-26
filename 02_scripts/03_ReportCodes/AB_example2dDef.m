@@ -94,8 +94,8 @@ mesh(ax1, X_orig_grid, Y_orig_grid, zeros(Ni, Nj), 'EdgeColor', [0.5 0.5 0.5], '
 plot(ax1, Ax(:,1), Ax(:,2), "m-", "LineWidth", 1.5); 
 
 xlim(ax1, [-1, 2]); ylim(ax1, [-1.5, 1.5]); 
-xlabel(ax1, "X Coordinate");
-ylabel(ax1, "Y Coordinate");
+xlabel(ax1, "X");
+ylabel(ax1, "Y");
 view(ax1, 2); 
 set(ax1, "Layer", "Top");
 
@@ -117,14 +117,14 @@ clim(ax2, [-max_vol_change, max_vol_change]);
 
 % Add colorbar
 c1 = colorbar(ax2);
-c1.Label.String = '\Delta Cell Volume (%)';
+c1.Label.String = 'Cell Volume Change (%)';
 
 % Using standard diverging colormap approach (jet/parula/turbo)
 colormap(ax2, "jet");  
 
 xlim(ax2, [-1, 2]); ylim(ax2, [-1.5, 1.5]);
-xlabel(ax2, "X Coordinate");
-ylabel(ax2, "Y Coordinate");
+xlabel(ax2, "X");
+ylabel(ax2, "Y");
 view(ax2, 2);
 set(ax2, "Layer", "Top");
 

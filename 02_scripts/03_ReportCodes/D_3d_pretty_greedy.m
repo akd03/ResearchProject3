@@ -84,8 +84,8 @@ if ~isempty(greedy_points)
     scatter(ax2, greedy_points(:,1), greedy_points(:,2), 25, 'r', 'filled', 'MarkerEdgeColor', 'k', 'DisplayName', sprintf('Greedy Points (N=%d)', length(greedy_idx)));
 end
 
-xlabel(ax2, 'X Coordinate (Chordwise)');
-ylabel(ax2, 'Z Coordinate (Vertical)');
+xlabel(ax2, 'X');
+ylabel(ax2, 'Y');
 title(ax2, 'Chosen Control Nodes (X-Y Projection)');
 legend(ax2, 'Location', 'best');
 hold(ax2, 'off');

@@ -62,13 +62,12 @@ tiledlayout(1, 2, "TileSpacing", "compact");
 
 % --- TILE 1: RADIUS OF CURVATURE ---
 ax1 = nexttile; hold on; grid on;
-plot(x_top, r_ana, "r.-", "LineWidth", 2, "DisplayName", "Analytical");
-plot(x_top, r_num_raw, "g.-", "LineWidth", 1.5, "DisplayName", "Numerical (Raw)");
-plot(x_top, r_num_smooth, "b.-", "LineWidth", 1.5, "DisplayName", "Numerical (Smoothed)");
+plot(x_top, r_ana, "r-", "LineWidth", 2, "DisplayName", "Analytical");
+plot(x_top, r_num_raw, "g-", "LineWidth", 1.5, "DisplayName", "Raw");
+plot(x_top, r_num_smooth, "b-", "LineWidth", 1.5, "DisplayName", "Smoothed");
 
-xlabel('Chord (x)');
+xlabel('Chord (X)');
 ylabel('Radius of Curvature (r)');
-title('Radius of Curvature Comparison');
 legend('Location', 'northwest');
 ylim([0, 8.5]);
 xlim([0, 1]);
@@ -76,10 +75,10 @@ set(ax1, "Layer", "Top");
 
 % --- TILE 2: NORMALIZED ERROR ---
 ax2 = nexttile; hold on; grid on;
-plot(x_top, rel_err_raw*100, "g.-", "LineWidth", 1.5, "DisplayName", "Raw Error");
-plot(x_top, rel_err_smooth*100, "b.-", "LineWidth", 1.5, "DisplayName", "Smoothed Error");
+plot(x_top, rel_err_raw*100, "g-", "LineWidth", 1.5, "DisplayName", "Raw Error");
+plot(x_top, rel_err_smooth*100, "b-", "LineWidth", 1.5, "DisplayName", "Smoothed Error");
 
-xlabel('Chord (x)');
+xlabel('Chord (X)');
 ylabel('Percentage Error (%)');
 title('Normalized Curvature Error');
 legend('Location', 'best');

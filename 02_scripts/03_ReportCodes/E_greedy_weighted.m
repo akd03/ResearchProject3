@@ -15,200 +15,276 @@ Nj = Header(2);
 MeshData = textscan(MeshFile, '%f %f %f');
 fclose(MeshFile);
 
-% Extract Aerofoil Surface Points (2D)
+% Extract Full Mesh and Surface Points
 Mx = [reshape(MeshData{1}, [Ni*Nj, 1]), reshape(MeshData{3}, [Ni*Nj, 1])];
 Ax = [Mx(1:Ni, 1), Mx(1:Ni, 2)];
 M = size(Ax, 1);
 
-% Base Initial Point - Seed with the Trailing Edge (Index 1)                                       
-Nx_idx_base = [1];
- 
-%% 2. DEFORMATION (Rigid Placeholder)
-DAx = NACACamber(Ax, 0.15, 0.5);
-RAx = DAx - Ax;
+X_base = reshape(Mx(:,1), Ni, Nj);
+Y_base = reshape(Mx(:,2), Ni, Nj);
 
-%% 3. CALCULATE NORMALIZED CURVATURE (CENTRAL DIFFERENCES)
+Nx_idx_base = [1]; % Seed with Trailing Edge
+
+%% 2. DEFORMATIONS
+% Deformation 1: Rotation
+DMx_rot = Rotate(Mx, 30, 0.5);
+DAx_rot = DMx_rot(1:Ni, :);
+RAx_rot = DAx_rot - Ax;
+
+% Deformation 2: Camber
+DMx_cam = NACACamber(Mx, 0.15, 0.5); % Applying to full mesh for orthogonality
+DAx_cam = DMx_cam(1:Ni, :);
+RAx_cam = DAx_cam - Ax;
+
+%% 3. ORTHOGONALITY CALCULATIONS
+Q_base = calculateOrthogonality(X_base, Y_base);
+
+X_rot = reshape(DMx_rot(:,1), Ni, Nj);
+Y_rot = reshape(DMx_rot(:,2), Ni, Nj);
+Q_rot = calculateOrthogonality(X_rot, Y_rot);
+dQ_rot = Q_rot - Q_base;
+
+X_cam = reshape(DMx_cam(:,1), Ni, Nj);
+Y_cam = reshape(DMx_cam(:,2), Ni, Nj);
+Q_cam = calculateOrthogonality(X_cam, Y_cam);
+dQ_cam = Q_cam - Q_base;
+
+% Output Table
+fprintf('\n==================================================\n');
+fprintf('ORTHOGONALITY ANALYSIS (Target Analytical Meshes)\n');
+fprintf('==================================================\n');
+fprintf('Base Mesh Average Orthogonality:    %.6f\n', mean(Q_base(:)));
+fprintf('Rotation Average Orthogonality:     %.6f\n', mean(Q_rot(:)));
+fprintf('Camber Average Orthogonality:       %.6f\n', mean(Q_cam(:)));
+fprintf('==================================================\n\n');
+
+%% 4. CALCULATE NORMALIZED CURVATURE (CENTRAL DIFFERENCES)
 dX = gradient(Ax(:, 1));
 dY = gradient(Ax(:, 2));
 ddX = gradient(dX);
 ddY = gradient(dY);
-
 Numerator = abs(dX .* ddY - dY .* ddX);
 Denominator = (dX.^2 + dY.^2).^(3/2);
 Denominator(Denominator == 0) = eps; 
-
 kappa = Numerator ./ Denominator;
 kappa(isnan(kappa)) = 0; 
 kappa_norm = kappa / max(kappa); 
 
-%% 4. PARAMETER SWEEP SETUP
+%% 5. PARAMETER SWEEP SETUP
 SF_R = 3;                  
 omega_vals = 0:0.01:1.0;    
 num_omega = length(omega_vals);
 
-% Setup Sweep 1: Fixed Node Count (Track Max Error and RMSE)
 N_vals = [25, 50, 100];
 num_N_tests = length(N_vals);
-s1_final_max_err = zeros(num_N_tests, num_omega);
-s1_final_rmse = zeros(num_N_tests, num_omega); % NEW ARRAY
-
-% Setup Sweep 2: Fixed Error Threshold (Track Node Count)
 err_threshold = 1e-6;
-s2_total_nodes = zeros(1, num_omega);
 
-% Setup Sweep 3: Visualizations
+% Storage Arrays (Rot = Rotation, Cam = Camber)
+err_rot = zeros(num_N_tests, num_omega);
+rmse_rot = zeros(num_N_tests, num_omega);
+nodes_rot = zeros(1, num_omega);
+
+err_cam = zeros(num_N_tests, num_omega);
+rmse_cam = zeros(num_N_tests, num_omega);
+nodes_cam = zeros(1, num_omega);
+
 vis_N = 25;
 vis_omega = [0, 0.4, 0.75];
-vis_Nx_idx = cell(3, 1);
+vis_idx_rot = cell(3, 1);
+vis_idx_cam = cell(3, 1);
 
-%% 5. DATA GENERATION LOOP
+%% 6. DATA GENERATION LOOP
 fprintf('Generating Data for Curvature Sweeps...\n');
-
 for j = 1:num_omega
     omega = omega_vals(j);
     
-    if mod(j, 10) == 0
-        fprintf('  Evaluating Omega = %.2f\n', omega);
-    end
-    
-    % --- SWEEP 1: Fixed Nodes ---
+    % SWEEP 1: Fixed Nodes
     for i = 1:num_N_tests
-        N_target = N_vals(i);
-        N_G = N_target - length(Nx_idx_base); 
+        N_G = N_vals(i) - length(Nx_idx_base); 
         
-        [~, max_err_hist, rmse_hist] = GreedyCholesky_Weighted(Nx_idx_base, Ax, RAx, SF_R, kappa_norm, omega, 'K', N_G);
-        s1_final_max_err(i, j) = max_err_hist(end);
-        s1_final_rmse(i, j) = rmse_hist(end); % STORE RMSE
+        [~, max_err_r, rmse_r] = GreedyCholesky_Weighted(Nx_idx_base, Ax, RAx_rot, SF_R, kappa_norm, omega, 'K', N_G);
+        err_rot(i, j) = max_err_r(end);
+        rmse_rot(i, j) = rmse_r(end);
+        
+        [~, max_err_c, rmse_c] = GreedyCholesky_Weighted(Nx_idx_base, Ax, RAx_cam, SF_R, kappa_norm, omega, 'K', N_G);
+        err_cam(i, j) = max_err_c(end);
+        rmse_cam(i, j) = rmse_c(end);
     end
     
-    % --- SWEEP 2: Fixed Error Threshold ---
-    [Nx_idx_out, ~, ~] = GreedyCholesky_Weighted(Nx_idx_base, Ax, RAx, SF_R, kappa_norm, omega, 'err_tol', err_threshold, 'K', Inf);
-    s2_total_nodes(j) = length(Nx_idx_out);
+    % SWEEP 2: Fixed Error Threshold
+    [idx_out_r, ~, ~] = GreedyCholesky_Weighted(Nx_idx_base, Ax, RAx_rot, SF_R, kappa_norm, omega, 'err_tol', err_threshold, 'K', Inf);
+    nodes_rot(j) = length(idx_out_r);
+    
+    [idx_out_c, ~, ~] = GreedyCholesky_Weighted(Nx_idx_base, Ax, RAx_cam, SF_R, kappa_norm, omega, 'err_tol', err_threshold, 'K', Inf);
+    nodes_cam(j) = length(idx_out_c);
 end
 
-% --- SWEEP 3: Visualization Points ---
-fprintf('Generating Visualization Points (N=%d)...\n', vis_N);
+% SWEEP 3: Visualization Points
 N_G_vis = vis_N - length(Nx_idx_base);
 for k = 1:3
-    [Nx_idx_final, ~, ~] = GreedyCholesky_Weighted(Nx_idx_base, Ax, RAx, SF_R, kappa_norm, vis_omega(k), 'K', N_G_vis);
-    vis_Nx_idx{k} = Nx_idx_final;
+    [idx_r, ~, ~] = GreedyCholesky_Weighted(Nx_idx_base, Ax, RAx_rot, SF_R, kappa_norm, vis_omega(k), 'K', N_G_vis);
+    vis_idx_rot{k} = idx_r;
+    
+    [idx_c, ~, ~] = GreedyCholesky_Weighted(Nx_idx_base, Ax, RAx_cam, SF_R, kappa_norm, vis_omega(k), 'K', N_G_vis);
+    vis_idx_cam{k} = idx_c;
 end
-fprintf('Data generation complete. Plotting...\n');
 
-%% 6. PLOT 1: PARAMETRIC SWEEPS (1x3 Layout)
-% Increased figure width to accommodate the third plot cleanly
-fig_sweeps = figure('Name', 'Curvature Weighting Sweeps', 'Position', [100, 100, 1400, 450]);
-tiledlayout(1, 3, "TileSpacing", "compact");
-
+%% 7. PLOT 1: PERFORMANCE SWEEPS (1x3)
+fig_sweeps = figure('Name', 'Deformation Sweeps', 'Units', 'centimeters', 'Position', [5, 15, 17, 6]);
+tiledlayout(1, 3, "TileSpacing", "compact", "Padding", "compact");
 colors = colororder;
 
-% --- Find the visualization points indices once for both plots ---
-N_idx = find(N_vals == vis_N, 1);
-omega_idx = zeros(1, length(vis_omega));
-for v = 1:length(vis_omega)
-    omega_idx(v) = find(abs(omega_vals - vis_omega(v)) < 1e-5, 1);
-end
-vis_color_idx = mod(N_idx-1, size(colors,1)) + 1;
-vis_color = colors(vis_color_idx, :);
-
-% --- TILE 1: Max Error vs Omega (Fixed N) ---
+% Tile 1: Max Error
 ax1 = nexttile;
-hold(ax1, 'on'); grid(ax1, 'on');
-set(ax1, 'YScale', 'log');
-xlabel(ax1, 'Curvature Weighting (\omega)');
-ylabel(ax1, 'Final Maximum Deformation Error');
-title(ax1, 'Effect of \omega on Max Error');
-
+hold(ax1, 'on'); grid(ax1, 'on'); set(ax1, 'YScale', 'log', 'LineWidth', 1.2, 'FontSize', 10, 'FontWeight', 'bold');
+xlabel(ax1, 'Curvature Weighting (\omega)'); ylabel(ax1, 'Max Error');
 for i = 1:num_N_tests
     c_idx = mod(i-1, size(colors,1)) + 1;
-    plot(ax1, omega_vals, s1_final_max_err(i, :), '.-', 'LineWidth', 1.5, ...
-        'MarkerSize', 8, 'Color', colors(c_idx, :), 'DisplayName', sprintf('N = %d', N_vals(i)));
+    plot(ax1, omega_vals, err_rot(i, :), '-', 'LineWidth', 1.5, 'Color', colors(c_idx, :), 'DisplayName', sprintf('Rot: N=%d', N_vals(i)));
+    plot(ax1, omega_vals, err_cam(i, :), '--', 'LineWidth', 1.5, 'Color', colors(c_idx, :), 'DisplayName', sprintf('Cam: N=%d', N_vals(i)));
 end
+legend(ax1, 'Location', 'northwest', 'FontSize', 8, 'FontWeight', 'normal');
 
-vis_max_errors = s1_final_max_err(N_idx, omega_idx);
-scatter(ax1, vis_omega, vis_max_errors, 60, vis_color, 'filled', ...
-        'LineWidth', 1, 'DisplayName', sprintf('Visualised (N=%d)', vis_N));
-
-legend(ax1, 'Location', 'best');
-hold(ax1, 'off');
-
-% --- TILE 2: RMSE vs Omega (Fixed N) ---
+% Tile 2: RMSE
 ax2 = nexttile;
-hold(ax2, 'on'); grid(ax2, 'on');
-set(ax2, 'YScale', 'log');
-xlabel(ax2, 'Curvature Weighting (\omega)');
-ylabel(ax2, 'Final RMSE');
-title(ax2, 'Effect of \omega on Global RMSE');
-
+hold(ax2, 'on'); grid(ax2, 'on'); set(ax2, 'YScale', 'log', 'LineWidth', 1.2, 'FontSize', 10, 'FontWeight', 'bold');
+xlabel(ax2, 'Curvature Weighting (\omega)'); ylabel(ax2, 'RMSE');
 for i = 1:num_N_tests
     c_idx = mod(i-1, size(colors,1)) + 1;
-    plot(ax2, omega_vals, s1_final_rmse(i, :), '.-', 'LineWidth', 1.5, ...
-        'MarkerSize', 8, 'Color', colors(c_idx, :), 'DisplayName', sprintf('N = %d', N_vals(i)));
+    plot(ax2, omega_vals, rmse_rot(i, :), '-', 'LineWidth', 1.5, 'Color', colors(c_idx, :), 'DisplayName', sprintf('Rot: N=%d', N_vals(i)));
+    plot(ax2, omega_vals, rmse_cam(i, :), '--', 'LineWidth', 1.5, 'Color', colors(c_idx, :), 'DisplayName', sprintf('Cam: N=%d', N_vals(i)));
 end
+legend(ax2, 'Location', 'northwest', 'FontSize', 8, 'FontWeight', 'normal');
 
-vis_rmse_vals = s1_final_rmse(N_idx, omega_idx);
-scatter(ax2, vis_omega, vis_rmse_vals, 60, vis_color, 'filled', ...
-    'LineWidth', 1, 'DisplayName', sprintf('Vis Points (N=%d)', vis_N));
-
-legend(ax2, 'Location', 'best');
-hold(ax2, 'off');
-
-% --- TILE 3: Required Nodes vs Omega (Fixed Tol) ---
+% Tile 3: Total Nodes
 ax3 = nexttile;
-hold(ax3, 'on'); grid(ax3, 'on');
-plot(ax3, omega_vals, s2_total_nodes, 'k.-', 'LineWidth', 1.5, 'MarkerSize', 8);
-xlabel(ax3, 'Curvature Weighting (\omega)');
-ylabel(ax3, 'Total Nodes Required');
-title(ax3, sprintf('Nodes Required to Reach E_{tol} = %g', err_threshold));
-hold(ax3, 'off');
+hold(ax3, 'on'); grid(ax3, 'on'); set(ax3, 'LineWidth', 1.2, 'FontSize', 10, 'FontWeight', 'bold');
+xlabel(ax3, 'Curvature Weighting (\omega)'); ylabel(ax3, 'Total Nodes');
+plot(ax3, omega_vals, nodes_rot, '-', 'LineWidth', 1.5, 'Color', 'k', 'DisplayName', 'Rotation');
+plot(ax3, omega_vals, nodes_cam, '--', 'LineWidth', 1.5, 'Color', 'k', 'DisplayName', 'Camber');
+legend(ax3, 'Location', 'northwest', 'FontSize', 8, 'FontWeight', 'normal');
 
-%% 7. PLOT 2: VISUALIZATION OF SELECTED POINTS (1x4 Layout)
-fig_vis = figure('Name', 'Spatial Clustering Visualization', 'Position', [150, 200, 1600, 350]);
-tiledlayout(1, 4, "TileSpacing", "compact");
+%% 8. PLOT 2: ROTATION VISUALIZATIONS (1x3)
+% Bulletproof padding for pcolor: make C exactly match X and Y sizes with NaNs at the edges
+dQ_rot_pad = nan(size(X_rot)); 
+dQ_rot_pad(1:size(dQ_rot,1), 1:size(dQ_rot,2)) = dQ_rot;
 
-% --- TILE 1: Undeformed Geometry ---
-ax4 = nexttile;
-hold(ax4, 'on'); grid(ax4, 'on'); axis(ax4, 'equal');
-plot(ax4, Ax(:,1), Ax(:,2), 'k-', 'LineWidth', 1.5);
-title(ax4, 'Undeformed Aerofoil');
-xlabel(ax4, 'X'); ylabel(ax4, 'Y');
-hold(ax4, 'off');
-xlim([-0.1, 1.1]); ylim([-0.3, 0.3]);
+fig_rot = figure('Name', 'Rotation Vis', 'Units', 'centimeters', 'Position', [5, 8, 17, 6]);
+tiledlayout(1, 3, "TileSpacing", "tight", "Padding", "tight");
 
-% --- TILES 2, 3, 4: Deformed with Control Points ---
 for k = 1:3
-    ax_curr = nexttile;
-    hold(ax_curr, 'on'); grid(ax_curr, 'on'); axis(ax_curr, 'equal');
+    ax = nexttile;
+    hold(ax, 'on'); set(ax, 'LineWidth', 1.2, 'FontSize', 10, 'FontWeight', 'bold');
+    xlim([-2, 3]); ylim([-1.5, 1.5]);
+    % Orthogonality Background
+    pc = pcolor(ax, X_rot, Y_rot, dQ_rot_pad);
+    shading(ax, 'flat'); colormap(ax, 'jet');
+    set(pc, 'HandleVisibility', 'off'); 
     
-    plot(ax_curr, DAx(:,1), DAx(:,2), '-', 'Color', [0.6 0.6 0.6], 'LineWidth', 1.5, 'DisplayName', 'Deformed Profile');
+    % Profile and Points
+    plot(ax, DAx_rot(:,1), DAx_rot(:,2), 'k-', 'LineWidth', 1.5, 'DisplayName', 'Deformed Aerofoil');
+    c_points = DAx_rot(vis_idx_rot{k}, :);
+    scatter(ax, c_points(:,1), c_points(:,2), 30, 'w', 'filled', 'MarkerEdgeColor', 'k', 'DisplayName', 'Control Nodes');
     
-    chosen_idx = vis_Nx_idx{k};
-    control_points = DAx(chosen_idx, :);
+    xlabel(ax, 'X'); ylabel(ax, 'Y');
+  
     
-    scatter(ax_curr, control_points(:,1), control_points(:,2), 30, 'r', 'filled', 'DisplayName', 'Control Points');
-    
-    title(ax_curr, sprintf('Deformed: N = %d, \\omega = %g', vis_N, vis_omega(k)));
-    xlabel(ax_curr, 'X'); ylabel(ax_curr, 'Y');
-    xlim([-0.1, 1.1]); ylim([-0.3, 0.3]);
+    cb = colorbar(ax); 
     if k == 3
-        legend(ax_curr, 'Location', 'northeast');
+        ylabel(cb, '\Delta Orthogonality (q)', 'FontSize', 10, 'FontWeight', 'bold'); 
+    else
+        set(cb, 'Visible', 'off');
     end
-    hold(ax_curr, 'off');
 end
 
-%% 8. SAVE PLOTS
-if ~exist('06_results', 'dir')
-    mkdir('06_results');
+%% 9. PLOT 3: CAMBER VISUALIZATIONS (1x3)
+% Bulletproof padding for pcolor
+dQ_cam_pad = nan(size(X_cam)); 
+dQ_cam_pad(1:size(dQ_cam,1), 1:size(dQ_cam,2)) = dQ_cam;
+
+fig_cam = figure('Name', 'Camber Vis', 'Units', 'centimeters', 'Position', [5, 1, 17, 6]);
+tiledlayout(1, 3, "TileSpacing", "compact", "Padding", "compact");
+
+for k = 1:3
+    ax = nexttile;
+    hold(ax, 'on'); set(ax, 'LineWidth', 1.2, 'FontSize', 10, 'FontWeight', 'bold');
+    xlim([-2, 3]); ylim([-1.5, 1.5]);
+    % Orthogonality Background
+    pc = pcolor(ax, X_cam, Y_cam, dQ_cam_pad);
+    shading(ax, 'flat'); colormap(ax, 'jet');
+    set(pc, 'HandleVisibility', 'off'); 
+    
+    % Profile and Points
+    plot(ax, DAx_cam(:,1), DAx_cam(:,2), 'k-', 'LineWidth', 1.5, 'DisplayName', 'Deformed Aerofoil');
+    c_points = DAx_cam(vis_idx_cam{k}, :);
+    scatter(ax, c_points(:,1), c_points(:,2), 30, 'w', 'filled', 'MarkerEdgeColor', 'k', 'DisplayName', 'Control Nodes');
+    
+    xlabel(ax, 'X'); ylabel(ax, 'Y');
+    
+   
+    cb = colorbar(ax); 
+    if k == 3
+        ylabel(cb, '\Delta Orthogonality (q)', 'FontSize', 8, 'FontWeight', 'bold'); 
+    else
+        set(cb, 'Visible', 'off');
+    end
 end
 
+%% 10. SAVE PLOTS
+if ~exist('06_results', 'dir'), mkdir('06_results'); end
 date_str = datestr(now, 'yyyymmdd');
-save_filename_1 = sprintf('Test10_2DcamberOmegaSweeps_%s', date_str);
-save_filename_2 = sprintf('Test11_2DcamberOmegaVis_%s', date_str);
 
-savefig(fig_sweeps, fullfile('06_results', [save_filename_1, '.fig']));
-savefig(fig_vis, fullfile('06_results', [save_filename_2, '.fig']));
+% Save Sweeps
+save_name1 = sprintf('Test20_Sweeps_%s', date_str);
+savefig(fig_sweeps, fullfile('06_results', [save_name1, '.fig']));
+exportgraphics(fig_sweeps, fullfile('06_results', [save_name1, '.pdf']), 'ContentType', 'vector');
 
-%exportgraphics(fig_sweeps, fullfile('06_results', [save_filename_1, '.pdf']), 'ContentType', 'vector');
-%exportgraphics(fig_vis, fullfile('06_results', [save_filename_2, '.pdf']), 'ContentType', 'vector');
+% Save Rotation
+save_name2 = sprintf('Test20_RotVis_%s', date_str);
+savefig(fig_rot, fullfile('06_results', [save_name2, '.fig']));
+exportgraphics(fig_rot, fullfile('06_results', [save_name2, '.pdf']), 'ContentType', 'vector');
 
-fprintf('Plots successfully saved to /06_results/\n');
+% Save Camber
+save_name3 = sprintf('Test20_CamVis_%s', date_str);
+savefig(fig_cam, fullfile('06_results', [save_name3, '.fig']));
+exportgraphics(fig_cam, fullfile('06_results', [save_name3, '.pdf']), 'ContentType', 'vector');
+
+fprintf('All three figures successfully saved and exported as PDFs.\n');
+
+%% HELPER FUNCTIONS
+function Q = calculateOrthogonality(X, Y)
+    [N, M] = size(X);
+    Q = zeros(N-1, M-1);
+    for i = 1:N-1
+        for j = 1:M-1
+            x1 = X(i, j);     y1 = Y(i, j);
+            x2 = X(i+1, j);   y2 = Y(i+1, j);
+            x3 = X(i+1, j+1); y3 = Y(i+1, j+1);
+            x4 = X(i, j+1);   y4 = Y(i, j+1);
+            
+            v1 = [x2 - x1, y2 - y1];
+            v2 = [x3 - x2, y3 - y2];
+            v3 = [x4 - x3, y4 - y3];
+            v4 = [x1 - x4, y1 - y4];
+            
+            v1_sq = dot(v1, v1); v2_sq = dot(v2, v2);
+            v3_sq = dot(v3, v3); v4_sq = dot(v4, v4);
+            
+            if v1_sq == 0 || v2_sq == 0 || v3_sq == 0 || v4_sq == 0
+                Q(i, j) = 1; continue;
+            end
+            
+            Q(i, j) = 0.25 * ((dot(v1, v2)^2)/(v1_sq*v2_sq) + (dot(v2, v3)^2)/(v2_sq*v3_sq) + ...
+                              (dot(v3, v4)^2)/(v3_sq*v4_sq) + (dot(v4, v1)^2)/(v4_sq*v1_sq));
+        end
+    end
+end
+
+function DPoints = Rotate(Points, angle_deg, x_origin)
+    theta = deg2rad(angle_deg);
+    R = [cos(theta), -sin(theta); sin(theta), cos(theta)];
+    DPoints = Points;
+    DPoints(:,1) = DPoints(:,1) - x_origin;
+    DPoints = (R * DPoints')';
+    DPoints(:,1) = DPoints(:,1) + x_origin;
+end

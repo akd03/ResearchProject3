@@ -94,40 +94,44 @@ end
 fprintf('Plotting...\n');
 % Increased figure width to accommodate 4 plots cleanly
 fig_main = figure('Name', '2D Error & Cost Reduction', 'Position', [100, 100, 1800, 450]);
-tiledlayout(1, 4, "TileSpacing", "compact");
+tiledlayout(2, 2, "TileSpacing", "compact");
 
-% --- TILE 1: Aerofoil Shape ---
-ax1 = nexttile;
-hold(ax1, 'on'); grid(ax1, 'on'); axis(ax1, 'equal');
-plot(ax1, Ax(:,1), Ax(:,2), 'r-', 'LineWidth', 1.5, 'DisplayName', 'Original (NACA0012)');
-plot(ax1, DAx(:,1), DAx(:,2), 'b-', 'LineWidth', 1.5, 'DisplayName', 'Deformed (NACA9512)');
-xlabel(ax1, 'X');
-ylabel(ax1, 'Y');
-title(ax1, 'Aerofoil Boundary');
-legend(ax1, 'Location', 'best');
+
 
 % --- TILE 2: Max Error ---
 ax2 = nexttile;
 hold(ax2, 'on'); grid(ax2, 'on');
 set(ax2, 'YScale', 'log'); 
-xlabel(ax2, 'Total Control Points Added (k)');
-ylabel(ax2, 'Maximum Deformation Error');
+xlabel(ax2, 'Total Control Points Added (N_C)');
+ylabel(ax2, 'Max. Error');
 title(ax2, sprintf('Max Error Convergence'));
 
 % --- TILE 3: RMSE ---
 ax3 = nexttile;
 hold(ax3, 'on'); grid(ax3, 'on');
 set(ax3, 'YScale', 'log'); 
-xlabel(ax3, 'Total Control Points Added (k)');
-ylabel(ax3, 'Root Mean Square Error (RMSE)');
+xlabel(ax3, 'Total Control Points Added (N_C)');
+ylabel(ax3, 'RMSE');
 title(ax3, sprintf('RMSE Convergence'));
+
+% --- TILE 1: Aerofoil Shape ---
+ax1 = nexttile;
+hold(ax1, 'on'); grid(ax1, 'on'); 
+plot(ax1, Ax(:,1), Ax(:,2), 'r-', 'LineWidth', 1.5, 'DisplayName', 'Original (NACA0012)');
+plot(ax1, DAx(:,1), DAx(:,2), 'b-', 'LineWidth', 1.5, 'DisplayName', 'Deformed (NACA9512)');
+xlabel(ax1, 'X');
+ylabel(ax1, 'Y');
+title(ax1, 'Aerofoil Boundary');
+xlim([-0.1, 1.1]);
+ylim([-0.6, 0.6]);
+legend(ax1, 'Location', 'best');
 
 % --- TILE 4: Theoretical Cost ---
 ax4 = nexttile;
 hold(ax4, 'on'); grid(ax4, 'on');
 set(ax4, 'YScale', 'log'); 
-xlabel(ax4, 'Total Control Points Added (k)');
-ylabel(ax4, 'Cumulative Operations');
+xlabel(ax4, 'Total Control Points Added (N_C)');
+ylabel(ax4, 'Cumulative FLOPs');
 title(ax4, sprintf('Theoretical Cost'));
 
 % Extract default color order to keep lines matching across subplots

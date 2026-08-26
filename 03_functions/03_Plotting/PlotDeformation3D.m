@@ -101,11 +101,11 @@ camlight('headlight');
 colormap('turbo');
 cb = colorbar; cb.Label.String = 'Displacement Magnitude';
 
-xlabel('X (Chordwise)'); ylabel('Y (Spanwise)'); zlabel('Z (Thickness)');
+xlabel('X'); ylabel('Y'); zlabel('Z');
 title('3D Aerofoil Surface Deformation');
 
 if ~isempty(h_orig) && ~isempty(h_def)
-    legend([h_orig, h_def], {'Original Mesh', 'Deformed Mesh'}, 'Location', 'northeast');
+    legend([h_orig, h_def], {'Original', 'Deformed'}, 'Location', 'northeast');
 end
 view(225, 30);
 hold off;

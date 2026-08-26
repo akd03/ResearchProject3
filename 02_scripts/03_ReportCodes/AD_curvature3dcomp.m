@@ -53,61 +53,64 @@ Err_sad  = abs(k_max_num_sad - k_max_ana_sad);
 RMSE_bowl = sqrt(mean(Err_bowl(:).^2));
 RMSE_sad  = sqrt(mean(Err_sad(:).^2));
 
-% --- 6. PLOT RESULTS ---
-fig_3d = figure('Name', '3D Curvature Test', 'Units', 'centimeters', 'Position', [5 5, 40, 10]);
-tiledlayout(1, 4, "TileSpacing", "compact");
+% --- 6. PLOT RESULTS (2x2 Layout) ---
+% Increased height to 12cm to accommodate two rows comfortably
+fig_3d = figure('Name', '3D Curvature Test', 'Units', 'centimeters', 'Position', [5 5, 17, 12]);
+tiledlayout(2, 2, "TileSpacing", "compact", "Padding", "compact");
 
-% Color limits to keep visuals consistent
+% Color limits to keep visuals consistent across rows
 max_K = max(max(k_max_num_bowl(:)), max(k_max_num_sad(:)));
 max_E = max(max(Err_bowl(:)), max(Err_sad(:)));
 
+% ---------------- ROW 1: CURVATURE ----------------
 % Tile 1: Bowl Curvature
 ax1 = nexttile; hold on; grid on;
 surf(ax1, X, Y, Z_bowl, k_max_num_bowl, 'EdgeColor', 'none');
-title(ax1, 'Bowl: Max Abs Curvature |\kappa_{max}|');
+title(ax1, 'Bowl: |\kappa_{max}|');
 xlabel(ax1, 'X'); ylabel(ax1, 'Y'); zlabel(ax1, 'Z');
 colormap(ax1, 'jet');
 clim(ax1, [0, max_K]);
-colorbar(ax1);
+colorbar(ax1); % Added back for clarity in 2x2
 view(ax1, 3); axis(ax1, 'equal');
 
 % Tile 2: Saddle Curvature
 ax2 = nexttile; hold on; grid on;
 surf(ax2, X, Y, Z_sad, k_max_num_sad, 'EdgeColor', 'none');
-title(ax2, 'Saddle: Max Abs Curvature |\kappa_{max}|');
+title(ax2, 'Saddle: |\kappa_{max}|');
 xlabel(ax2, 'X'); ylabel(ax2, 'Y'); zlabel(ax2, 'Z');
 colormap(ax2, 'jet');
 clim(ax2, [0, max_K]);
 colorbar(ax2);
 view(ax2, 3); axis(ax2, 'equal');
 
+% ---------------- ROW 2: ERROR ----------------
 % Tile 3: Bowl Absolute Error
 ax3 = nexttile; hold on; grid on;
 surf(ax3, X, Y, Z_bowl, Err_bowl, 'EdgeColor', 'none');
-title(ax3, sprintf('Bowl Error (RMSE: %.2e)', RMSE_bowl));
+title(ax3, sprintf('Bowl Err (RMSE: %.2e)', RMSE_bowl));
 xlabel(ax3, 'X'); ylabel(ax3, 'Y'); zlabel(ax3, 'Z');
-colormap(ax3, 'hot'); % Switch colormap to distinguish error plots
+colormap(ax3, 'hot'); 
 clim(ax3, [0, max_E]);
 cb3 = colorbar(ax3);
-cb3.Label.String = 'Absolute Error';
+cb3.Label.String = 'Abs Error';
 view(ax3, 3); axis(ax3, 'equal');
 
 % Tile 4: Saddle Absolute Error
 ax4 = nexttile; hold on; grid on;
 surf(ax4, X, Y, Z_sad, Err_sad, 'EdgeColor', 'none');
-title(ax4, sprintf('Saddle Error (RMSE: %.2e)', RMSE_sad));
+title(ax4, sprintf('Saddle Err (RMSE: %.2e)', RMSE_sad));
 xlabel(ax4, 'X'); ylabel(ax4, 'Y'); zlabel(ax4, 'Z');
 colormap(ax4, 'hot'); 
 clim(ax4, [0, max_E]);
 cb4 = colorbar(ax4);
-cb4.Label.String = 'Absolute Error';
+cb4.Label.String = 'Abs Error';
 view(ax4, 3); axis(ax4, 'equal');
 
 % --- APPLY GLOBAL STYLES ---
 set(findall(fig_3d, '-property', 'FontName'), 'FontName', 'Arial');
 set(findall(fig_3d, '-property', 'FontWeight'), 'FontWeight', 'bold');
-set(findall(fig_3d, '-property', 'FontSize'), 'FontSize', 12);
-set(findall(fig_3d, 'Type', 'axes'), 'LineWidth', 1.5);
+set(findall(fig_3d, '-property', 'FontSize'), 'FontSize', 10);
+set(findall(fig_3d, 'Type', 'axes'), 'LineWidth', 1.2);
 
 % --- 7. SAVE FIGURES ---
 output_dir = '04_figures';
@@ -115,10 +118,8 @@ if ~exist(output_dir, 'dir')
     mkdir(output_dir);
 end
 date_str = datestr(now, 'yyyymmdd');
-save_filename = sprintf('F4_3DCurvatureTest_%s', date_str);
+save_filename = sprintf('F4_3DCurvatureTest_2x2_%s', date_str);
 save_filepath = fullfile(output_dir, [save_filename, '.fig']);
-
 savefig(fig_3d, save_filepath);
 %exportgraphics(fig_3d, fullfile(output_dir, [save_filename, '.pdf']), 'ContentType', 'vector');
-
 fprintf('Figure successfully saved to: %s\n', save_filepath);
